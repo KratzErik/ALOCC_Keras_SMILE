@@ -4,6 +4,7 @@ from keras.datasets import mnist
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout, multiply, GaussianNoise
 from keras.layers import BatchNormalization, Activation, Embedding, ZeroPadding2D
 from keras.layers import Concatenate
+from keras.layers import MaxPool2D as MaxPool
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D, Conv2DTranspose
 from keras.models import Sequential, Model
@@ -16,6 +17,9 @@ import scipy
 import logging
 import matplotlib.pyplot as plt
 import os
+from ae_architecture import AE_Architecture
+from d_architecture import D_Architecture
+from configuration import Configuration as cfg
 
 import numpy as np
 
@@ -29,7 +33,7 @@ class ALOCC_Model():
                attention_label=1, is_training=True,
                z_dim=100, gf_dim=16, df_dim=16, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
-               checkpoint_dir='checkpoint', log_dir='log', sample_dir='sample', r_alpha = 0.2,
+               checkpoint_dir=cfg.model_dir/'checkpoint', log_dir=cfg.log_dir, sample_dir=cfg.train_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
                n_fetch_data=10):
         """
@@ -82,6 +86,13 @@ class ALOCC_Model():
         self.log_dir = log_dir
 
         self.attention_label = attention_label
+
+        if cfg.architecture == 'ALOCC_mnist':
+            self.ae_architecture = None
+            self.d_architecture = None
+        else:
+            self.ae_architecture = AE_Architecture(hardcoded = cfg.architecture, model = self)
+            self.d_architecture = D_Architecture(hardcoded = cfg.architecture, model = self)
         if self.is_training:
           logging.basicConfig(filename='ALOCC_loss.log', level=logging.INFO)
 
@@ -92,6 +103,19 @@ class ALOCC_Model():
           specific_idx = np.where(y_train == self.attention_label)[0]
           self.data = X_train[specific_idx].reshape(-1, 28, 28, 1)
           self.c_dim = 1
+        elif self.dataset_name in ('dreyeve','prosivic'):
+            if self.is_training:
+                X_train = [img_to_array(load_img(Cfg.train_folder + filename)) for filename in os.listdir(Cfg.train_folder)][:n_train]
+                self.data = X_train / 255.0
+                # self._X_val = [img_to_array(load_img(Cfg.prosivic_val_folder + filename)) for filename in os.listdir(Cfg.prosivic_val_folder)][:Cfg.prosivic_n_val] 
+            else: #load test data     
+                n_test_out = Cfg.prosivic_n_test - Cfg.prosivic_n_test_in
+                _X_test_in = [img_to_array(load_img(Cfg.prosivic_test_in_folder + filename)) for filename in os.listdir(Cfg.prosivic_test_in_folder)][:Cfg.prosivic_n_test_in]
+                _X_test_out = [img_to_array(load_img(Cfg.prosivic_test_out_folder + filename)) for filename in os.listdir(Cfg.prosivic_test_out_folder)][:n_test_out]
+                _y_test_in  = np.ones((Cfg.prosivic_n_test_in,),dtype=np.int32)
+                _y_test_out = np.zeros((n_test_out,),dtype=np.int32)
+                self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
+                self.test_labels = np.concatenate([_y_test_in, _y_test_out])
         else:
           assert('Error in loading dataset')
 
@@ -107,35 +131,124 @@ class ALOCC_Model():
         Returns:
             [Tensor] -- Output tensor of the generator/R network.
         """
-        image = Input(shape=input_shape, name='z')
-        # Encoder.
-        x = Conv2D(filters=self.df_dim * 2, kernel_size = 5, strides=2, padding='same', name='g_encoder_h0_conv')(image)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
-        x = Conv2D(filters=self.df_dim * 4, kernel_size = 5, strides=2, padding='same', name='g_encoder_h1_conv')(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
-        x = Conv2D(filters=self.df_dim * 8, kernel_size = 5, strides=2, padding='same', name='g_encoder_h2_conv')(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
 
-        # Decoder.
-        # TODO: need a flexable solution to select output_padding and padding.
-        # x = Conv2DTranspose(self.gf_dim*2, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=0, name='g_decoder_h0')(x)
-        # x = BatchNormalization()(x)
-        # x = Conv2DTranspose(self.gf_dim*1, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=1, name='g_decoder_h1')(x)
-        # x = BatchNormalization()(x)
-        # x = Conv2DTranspose(self.c_dim,    kernel_size = 5, strides=2, activation='tanh', padding='same', output_padding=1, name='g_decoder_h2')(x)
+        if self.ae_architecture is None:
+            image = Input(shape=input_shape, name='z')
+            # Encoder.
+            x = Conv2D(filters=self.df_dim * 2, kernel_size = 5, strides=2, padding='same', name='g_encoder_h0_conv')(image)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
+            x = Conv2D(filters=self.df_dim * 4, kernel_size = 5, strides=2, padding='same', name='g_encoder_h1_conv')(x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
+            x = Conv2D(filters=self.df_dim * 8, kernel_size = 5, strides=2, padding='same', name='g_encoder_h2_conv')(x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
 
-        x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(self.gf_dim*2, kernel_size=3, activation='relu')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = Conv2D(self.c_dim, kernel_size=5, activation='sigmoid', padding='same')(x)
-        return Model(image, x, name='R')
+            # Decoder.
+            # TODO: need a flexable solution to select output_padding and padding.
+            # x = Conv2DTranspose(self.gf_dim*2, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=0, name='g_decoder_h0')(x)
+            # x = BatchNormalization()(x)
+            # x = Conv2DTranspose(self.gf_dim*1, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=1, name='g_decoder_h1')(x)
+            # x = BatchNormalization()(x)
+            # x = Conv2DTranspose(self.c_dim,    kernel_size = 5, strides=2, activation='tanh', padding='same', output_padding=1, name='g_decoder_h2')(x)
 
+            x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
+            x = UpSampling2D((2, 2))(x)
+            x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
+            x = UpSampling2D((2, 2))(x)
+            x = Conv2D(self.gf_dim*2, kernel_size=3, activation='relu')(x)
+            x = UpSampling2D((2, 2))(x)
+            x = Conv2D(self.c_dim, kernel_size=5, activation='sigmoid', padding='same')(x)
+            return Model(image, x, name='R')
+        
+        else: # architecture built from ae_architecture object
+            image = Input(shape=input_shape, name='z')
+            x = image
+            # Encoder
+            for m in range(self.ae_architecture.n_conv_modules): # Loop over conv modules
+                k_size = self.ae_architecture.filter_size[m]
+                stride = self.ae_architecture.stride[m]
+                channels = self.ae_architecture.channels[m]
+                for l in range(self.ae_architecture.n_conv_layers_per_module[m])
+                    if l == self.ae_architecture.n_conv_layers_per_module[m] - 1: # last layer in module
+                        stride = self.ae_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
+                    x = Conv2D(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_encoder_h%d_%d_conv'%(m,l))(x)
+                    if self.ae_architecture.use_batch_norm:
+                        x = BatchNormalization()(x)
+                    if self.ae_architecture.use_dropout:
+                        x = Dropout(self.ae_architecture.dropout_rate)(x)
+                    x = LeakyReLU()(x)
+                if self.max_pool:
+                    x = MaxPool(self.ae_architecture.pool_size[m])(x)
+            
+            # Compute current image dimensions
+            height_scale_factor = np.prod(self.ae_architecture.dim_red_stride)
+            height_before_dense = input_shape[0]//height_scale_factor
+            width_scale_factor = np.prod(self.ae_architecture.dim_red_stride)
+            width_before_dense = input_shape[1]//width_scale_factor
+            channels_before_dense = self.ae_architecture.channels[-1]
+            shape_before_dense = [height_before_dense,width_before_dense,channels_before_dense]
+
+            for d in range(self.ae_architecture.n_dense_layers):
+                x = Flatten()(x)
+                x = Dense(self.ae_architecture.n_dense_units[d], activation='None', name='g_encoder_h%d_lin'%d)(x)
+                if self.ae_architecture.use_batch_norm:
+                    x = BatchNormalization()(x)
+                if self.ae_architecture.use_dropout:
+                    x = Dropout(self.ae_architecture.dropout_rate)(x)
+                x = LeakyReLU()(x)
+
+            # Decoder
+            n_dense_units_flip = np.flip(self.ae_architecture.n_dense_units)[:-1]
+            n_dense_units_flip.extend(np.prod(shape_before_dense))
+            n_conv_layers_per_module_flip = np.flip(self.ae_architecture.n_conv_layers_per_module)
+            channels_flip = np.flip(self.ae_architecture.channel_factor)[:-1]
+            channels_flip.extend(self.c_dim)
+            filter_size_flip = np.flip(self.ae_architecture.filter_size)
+            stride_flip = np.flip(self.ae_architecture.stride)
+
+            for d in range(self.ae_architecture.n_dense_layers):
+                x = Flatten()(x)
+                x = Dense(n_dense_units_flip[d], activation='None', name='g_decoder_h%d_lin'%d)(x)
+                if self.ae_architecture.use_batch_norm:
+                    x = BatchNormalization()(x)
+                if self.ae_architecture.use_dropout:
+                    x = Dropout(self.ae_architecture.dropout_rate)(x)
+                x = LeakyReLU()(x)
+
+            x = Reshape(shape_before_dense)(x)
+
+
+            for m in range(self.ae_architecture.n_conv_modules): # Loop over conv modules
+                channels = channels_flip[m]
+                if self.ae_architecture.max_pool:
+                    x = UpSampling2D((self.ae_architecture.pool_size,self.ae_architecture.pool_size))(x)
+                for l in range(n_conv_layers_per_module_flip[m])
+                    stride = stride_flip[m]
+                    k_size = filter_size_flip[m]
+                    if l == 0: # last layer in module
+                        stride = self.ae_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
+                    if self.ae_architecture.max_pool:
+                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same',  name='g_decoder_h%d_%d_conv'%(m,l))(x)
+                    else: 
+                        outpad = (k_size-stride)%2
+                        inpad = (k_size-stride+outpad)//2
+                        x = ZeroPadding2D((inpad,inpad))(x)
+                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
+                        if self.ae_architecture.use_batch_norm:
+                        x = BatchNormalization()(x)
+                    if self.ae_architecture.use_dropout:
+                        x = Dropout(self.ae_architecture.dropout_rate)(x)
+                    if m == self.ae_architecture.n_conv_modules - 1 and l == self.ae_architecture.n_conv_layers_per_module[m]-1:
+                        # Output layer
+                        x = Activation('sigmoid')(x)
+                    else:
+                        x = LeakyReLU()(x)
+            
+            return Model(image, x, name='R')
+                
+    
     def build_discriminator(self, input_shape):
         """Build the discriminator/D network
         
@@ -146,27 +259,71 @@ class ALOCC_Model():
         Returns:
             [Tensor] -- Network output tensors.
         """
+        if self.d_architecture is None:
+            image = Input(shape=input_shape, name='d_input')
+            x = Conv2D(filters=self.df_dim, kernel_size = 5, strides=2, padding='same', name='d_h0_conv')(image)
+            x = LeakyReLU()(x)
 
-        image = Input(shape=input_shape, name='d_input')
-        x = Conv2D(filters=self.df_dim, kernel_size = 5, strides=2, padding='same', name='d_h0_conv')(image)
-        x = LeakyReLU()(x)
+            x = Conv2D(filters=self.df_dim*2, kernel_size = 5, strides=2, padding='same', name='d_h1_conv')(x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
 
-        x = Conv2D(filters=self.df_dim*2, kernel_size = 5, strides=2, padding='same', name='d_h1_conv')(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
+            x = Conv2D(filters=self.df_dim*4, kernel_size = 5, strides=2, padding='same', name='d_h2_conv')(x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
 
-        x = Conv2D(filters=self.df_dim*4, kernel_size = 5, strides=2, padding='same', name='d_h2_conv')(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
+            x = Conv2D(filters=self.df_dim*8, kernel_size = 5, strides=2, padding='same', name='d_h3_conv')(x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
 
-        x = Conv2D(filters=self.df_dim*8, kernel_size = 5, strides=2, padding='same', name='d_h3_conv')(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU()(x)
+            x = Flatten()(x)
+            x = Dense(1, activation='sigmoid', name='d_h3_lin')(x)
 
-        x = Flatten()(x)
-        x = Dense(1, activation='sigmoid', name='d_h3_lin')(x)
+            return Model(image, x, name='D')
+        
+        else: # architecture built from d_architecture object
+            image = Input(shape=input_shape, name='z')
+            x = image
+            
+            # Encoder
+            for m in range(self.d_architecture.n_conv_modules): # Loop over conv modules
+                k_size = self.d_architecture.filter_size[m]
+                stride = self.d_architecture.stride[m]
+                channels = self.d_architecture.channels[m]
+                for l in range(self.d_architecture.n_conv_layers_per_module[m])
+                    if l == self.d_architecture.n_conv_layers_per_module[m] - 1: # last layer in module
+                        stride = self.d_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
+                    x = Conv2D(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='d_h%d_%d_conv'%(m,l))(x)
+                    if self.d_architecture.use_batch_norm:
+                        x = BatchNormalization()(x)
+                    if self.d_architecture.use_dropout:
+                        x = Dropout(self.d_architecture.dropout_rate)(x)
+                    x = LeakyReLU()(x)
+                if self.max_pool:
+                    x = MaxPool(self.d_architecture.pool_size[m])(x)
+            
+            # Compute current image dimensions
+            height_scale_factor = np.prod(self.d_architecture.dim_red_stride)
+            height_before_dense = input_shape[0]//height_scale_factor
+            width_scale_factor = np.prod(self.d_architecture.dim_red_stride)
+            width_before_dense = input_shape[1]//width_scale_factor
+            channels_before_dense = self.d_architecture.channels[-1]
+            shape_before_dense = [height_before_dense,width_before_dense,channels_before_dense]
 
-        return Model(image, x, name='D')
+            for d in range(self.d_architecture.n_dense_layers):
+                x = Flatten()(x)
+                x = Dense(self.d_architecture.n_dense_units[d], activation='None', name='d_h%d_lin'%d)(x)
+                if self.d_architecture.use_batch_norm:
+                    x = BatchNormalization()(x)
+                if self.d_architecture.use_dropout:
+                    x = Dropout(self.d_architecture.dropout_rate)(x)
+                if d == self.d_architecture.n_dense_layers - 1: # output
+                    x = Activation('sigmoid')(x)
+                else:
+                    x = LeakyReLU()(x)
+            
+            return Model(image, x, name='D')
+
 
     def build_model(self):
         image_dims = [self.input_height, self.input_width, self.c_dim]
