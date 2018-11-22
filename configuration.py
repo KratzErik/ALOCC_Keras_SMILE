@@ -3,13 +3,14 @@ from pathlib import Path
 from datetime.datetime import now
 class Configuration(object):
 
-# Architecture
-d_n_conv_modules =  # number of conv. modules
-self.n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-self.n_dense_layers = 2 # number of dense layers in 
-self.n_dense_units = model.z_dim
+    # Architecture
+    d_n_conv_modules =  # number of conv. modules
+    self.n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+    self.n_dense_layers = 2 # number of dense layers in 
+    self.n_dense_units = model.z_dim
 
-# put config variable definitions here
+    # put config variable definitions here
+    n_epochs = 100
     dataset = 'prosivic'
     n_train = 100
     n_val = 50

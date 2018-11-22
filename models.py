@@ -452,5 +452,5 @@ class ALOCC_Model():
 
 
 if __name__ == '__main__':
-    model = ALOCC_Model(dataset_name='mnist', input_height=28,input_width=28)
-    model.train(epochs=5, batch_size=128, sample_interval=500)
+    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=image_width)
+    model.train(epochs=n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))
