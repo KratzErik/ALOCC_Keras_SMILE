@@ -368,7 +368,7 @@ class ALOCC_Model():
 
         self.discriminator.trainable = False
         validity = self.discriminator(reconstructed_img)
-        
+
         # Model to train Generator/R to minimize reconstruction loss and trick D to see
         # generated images as real ones.
         self.adversarial_model = Model(img, [reconstructed_img, validity])
@@ -401,6 +401,8 @@ class ALOCC_Model():
         # Record generator/R network reconstruction training losses.
         plot_epochs = []
         plot_g_recon_losses = []
+        plot_d_real_losses = []
+        plot_d_fake_losses = []
 
         # Load traning data, add random noise.
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
@@ -431,6 +433,8 @@ class ALOCC_Model():
                     # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
                     d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
                     d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
+                    plot_d_real_losses.append(d_loss_real)
+                    plot_d_fake_losses.append(d_loss_fake)
 
                     # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
                     self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
@@ -457,7 +461,25 @@ class ALOCC_Model():
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(plot_epochs,plot_g_recon_losses)
-        plt.savefig('plot_g_recon_losses.png')
+        plt.savefig(cfg.train_dir+'plot_g_recon_losses.png')
+
+        plt.clf()
+        # Export the discriminator losses for real images as a plot.
+        plt.title('Discriminator loss for real images (should be 1)')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(plot_epochs,plot_d_real_losses)
+        plt.savefig(cfg.train_dir+'plot_d_real_losses.png')
+
+        # Export the discriminator losses for fake images as a plot.
+        plt.title('Discriminator loss for fake images (should be 0)')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(plot_epochs,plot_d_fake_losses)
+        plt.savefig(cfg.train_dir+'plot_d_fake_losses.png')
+
 
     @property
     def model_dir(self):
@@ -477,5 +499,5 @@ class ALOCC_Model():
 
 
 if __name__ == '__main__':
-    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width)
+    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha)
     model.train(epochs=cfg.n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))

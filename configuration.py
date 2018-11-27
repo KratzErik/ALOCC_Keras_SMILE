@@ -9,7 +9,7 @@ class Configuration(object):
     n_dense_layers = 2 # number of dense layers in 
     n_dense_units = z_dim
     # put config variable definitions here
-    n_epochs = 100
+    n_epochs = 40
     dataset = 'mnist'
     n_train = 100
     n_val = 50
@@ -17,6 +17,10 @@ class Configuration(object):
     n_test_in = 50
     out_frac = (n_test-n_test_in)/n_test
     train_batch_size = 64
+    
+    # Model hyper parameters
+    r_alpha = 0.3
+
     if dataset in ('dreyeve','prosivic'):
         image_height = 256
         image_width = 256

@@ -22,11 +22,17 @@ data = model.data
 batch_size = cfg.test_batch_size
 n_batches = len(data)//batch_size
 scores = np.array([])
-
+recon_errors = np.array([])
 for batch_idx in range(n_batches):
     batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
-    batch_scores = model.adversarial_model.predict(batch_data)[1]
+    batch_predicts = model.adversarial_model.predict(batch_data)
+    batch_scores = batch_predicts[1]
+    batch_recons = batch_predicts[0]
+    batch_recon_errors = np.array([K.eval(binary_crossentropy(K.variable(img), K.variable(recon))).mean() for img, recon in zip(batch_data, batch_recons)])
+
     scores = np.append(scores, batch_scores)
+    recon_errors = np.append(recon_errors, batch_recon_errors)
+
     if cfg.test_batch_verbose:
         batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
         # Print metrics for batch
@@ -36,7 +42,7 @@ for batch_idx in range(n_batches):
         prc_auc = auc(rc, pr)
 
 # get final predics
-scores = np.append(scores,model.adversarial_model.predict(data[n_batches*batch_size:])[1])
+scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
 # Assert export dir exists
 if not os.path.exists(cfg.test_dir):
@@ -44,11 +50,19 @@ if not os.path.exists(cfg.test_dir):
     print("Created directory %s" % cfg.test_dir)
 
 # Print metrics
-roc_auc = roc_auc_score(model.test_labels, scores)
-print("AUROC:\t", roc_auc)
-pr, rc, _ = precision_recall_curve(model.test_labels, scores)
+fpr, tpr, _ = roc_curve(model.test_labels, scores, pos_label = 0)
+roc_auc = auc(fpr,tpr)
+print("AUROC D():\t", roc_auc)
+pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 0)
 prc_auc = auc(rc, pr)
-print("AUPRC:\t", prc_auc)
+print("AUPRC: D()\t", prc_auc)
+
+fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
+roc_auc = auc(fpr,tpr)
+print("AUROC error:\t", roc_auc)
+pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
+prc_auc = auc(rc, pr)
+print("AUPRC: error\t", prc_auc)
 
 # Save figures, etc, etc.
 inlier_idx = np.where(model.test_labels==1)[0]
@@ -77,5 +91,6 @@ sample_recon = sample_predicts[0]
 sample_scores = sample_predicts[1]
 montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
 scipy.misc.imsave(cfg.test_dir+'test_reconstruction_samples.jpg', montage(montage_imgs))
-
+print("Sample scores:")
+print(sample_scores)
 
