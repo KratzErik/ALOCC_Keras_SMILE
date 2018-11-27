@@ -127,8 +127,8 @@ class ALOCC_Model():
                 # self._X_val = [img_to_array(load_img(Cfg.prosivic_val_folder + filename)) for filename in os.listdir(Cfg.prosivic_val_folder)][:Cfg.prosivic_n_val] 
             else: #load test data     
                 n_test_out = cfg.n_test - cfg.n_test_in
-                _X_test_in = np.array([img_to_array(load_img(cfg.prosivic_test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
-                _X_test_out = np.array([img_to_array(load_img(cfg.prosivic_test_out_folder + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
+                _X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
+                _X_test_out = np.array([img_to_array(load_img(cfg.test_out_folder + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
                 _y_test_in  = np.ones((cfg.n_test_in,),dtype=np.int32)
                 _y_test_out = np.zeros((n_test_out,),dtype=np.int32)
                 self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
@@ -256,9 +256,10 @@ class ALOCC_Model():
                     else:
                         outpad = int((k_size-stride)%2)
                         inpad = int((k_size-stride+outpad)//2)
-                        print(inpad, type(inpad))
-                        x = ZeroPadding2D(padding=inpad)(x)
-                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
+                        #print(inpad, type(inpad))
+                        #x = ZeroPadding2D(padding=inpad)(x)
+#                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
+                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         if self.ae_architecture.use_batch_norm:
                             x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
@@ -378,8 +379,9 @@ class ALOCC_Model():
 
         print('\n\rdiscriminator')
         self.discriminator.summary()
-
-        print('\n\adversarial_model')
+        print('\n\rautoencoder')
+        self.generator.summary()
+        print('\n\radversarial_model')
         self.adversarial_model.summary()
 
     

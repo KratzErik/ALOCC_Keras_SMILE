@@ -28,10 +28,10 @@ for batch_idx in range(n_batches):
     batch_predicts = model.adversarial_model.predict(batch_data)
     batch_scores = batch_predicts[1]
     batch_recons = batch_predicts[0]
-    batch_recon_errors = np.array([K.eval(binary_crossentropy(K.variable(img), K.variable(recon))).mean() for img, recon in zip(batch_data, batch_recons)])
+#    batch_recon_errors = np.array([K.eval(binary_crossentropy(K.variable(img), K.variable(recon))).mean() for img, recon in zip(batch_data, batch_recons)])
 
     scores = np.append(scores, batch_scores)
-    recon_errors = np.append(recon_errors, batch_recon_errors)
+#    recon_errors = np.append(recon_errors, batch_recon_errors)
 
     if cfg.test_batch_verbose:
         batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -57,12 +57,12 @@ pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 0)
 prc_auc = auc(rc, pr)
 print("AUPRC: D()\t", prc_auc)
 
-fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
-roc_auc = auc(fpr,tpr)
-print("AUROC error:\t", roc_auc)
-pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
-prc_auc = auc(rc, pr)
-print("AUPRC: error\t", prc_auc)
+#fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
+#roc_auc = auc(fpr,tpr)
+#print("AUROC error:\t", roc_auc)
+#pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
+#prc_auc = auc(rc, pr)
+#print("AUPRC: error\t", prc_auc)
 
 # Save figures, etc, etc.
 inlier_idx = np.where(model.test_labels==1)[0]
