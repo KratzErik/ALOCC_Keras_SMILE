@@ -20,7 +20,7 @@ import os
 from ae_architecture import AE_Architecture
 from d_architecture import D_Architecture
 from configuration import Configuration as cfg
-
+from keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 
 from utils import *
@@ -33,7 +33,7 @@ class ALOCC_Model():
                attention_label=1, is_training=True,
                z_dim=100, gf_dim=16, df_dim=16, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
-               checkpoint_dir=cfg.model_dir/'checkpoint', log_dir=cfg.log_dir, sample_dir=cfg.train_dir, r_alpha = 0.2,
+               checkpoint_dir=cfg.model_dir+'/checkpoint', log_dir=cfg.log_dir, sample_dir=cfg.train_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
                n_fetch_data=10):
         """
@@ -88,31 +88,48 @@ class ALOCC_Model():
         self.attention_label = attention_label
 
         if cfg.architecture == 'ALOCC_mnist':
+            print("Using original ALOCC architectures")
             self.ae_architecture = None
             self.d_architecture = None
         else:
-            self.ae_architecture = AE_Architecture(hardcoded = cfg.architecture, model = self)
-            self.d_architecture = D_Architecture(hardcoded = cfg.architecture, model = self)
+            self.ae_architecture = AE_Architecture(hardcoded = cfg.architecture)
+            self.d_architecture = D_Architecture(hardcoded = cfg.architecture)
         if self.is_training:
           logging.basicConfig(filename='ALOCC_loss.log', level=logging.INFO)
 
         if self.dataset_name == 'mnist':
           (X_train, y_train), (_, _) = mnist.load_data()
+          print("Loaded mnist data")
           # Make the data range between 0~1.
           X_train = X_train / 255
           specific_idx = np.where(y_train == self.attention_label)[0]
-          self.data = X_train[specific_idx].reshape(-1, 28, 28, 1)
+          inlier_data = X_train[specific_idx].reshape(-1, 28, 28, 1)
+          if self.is_training:
+              self.data = inlier_data
+          else: # load test data
+               X_test_in = inlier_data[np.random.choice(len(inlier_data), cfg.n_test_in, replace=False)]
+               n_test_out = cfg.n_test - cfg.n_test_in
+               outlier_idx = np.where(y_train != self.attention_label)[0]
+               outlier_data = X_train[outlier_idx].reshape(-1, 28, 28, 1)
+               X_test_out = outlier_data[np.random.choice(len(outlier_data), n_test_out, replace=False)]
+               self.data = np.concatenate([X_test_in, X_test_out])
+               y_test_in  = np.ones((cfg.n_test_in,),dtype=np.int32)
+               y_test_out = np.zeros((n_test_out,),dtype=np.int32)
+               self.test_labels = np.concatenate([y_test_in, y_test_out])
+
           self.c_dim = 1
+
         elif self.dataset_name in ('dreyeve','prosivic'):
+            self.c_dim = 3
             if self.is_training:
-                X_train = [img_to_array(load_img(Cfg.train_folder + filename)) for filename in os.listdir(Cfg.train_folder)][:n_train]
+                X_train = np.array([img_to_array(load_img(cfg.train_folder + filename)) for filename in os.listdir(cfg.train_folder)][:cfg.n_train])
                 self.data = X_train / 255.0
                 # self._X_val = [img_to_array(load_img(Cfg.prosivic_val_folder + filename)) for filename in os.listdir(Cfg.prosivic_val_folder)][:Cfg.prosivic_n_val] 
             else: #load test data     
-                n_test_out = Cfg.prosivic_n_test - Cfg.prosivic_n_test_in
-                _X_test_in = [img_to_array(load_img(Cfg.prosivic_test_in_folder + filename)) for filename in os.listdir(Cfg.prosivic_test_in_folder)][:Cfg.prosivic_n_test_in]
-                _X_test_out = [img_to_array(load_img(Cfg.prosivic_test_out_folder + filename)) for filename in os.listdir(Cfg.prosivic_test_out_folder)][:n_test_out]
-                _y_test_in  = np.ones((Cfg.prosivic_n_test_in,),dtype=np.int32)
+                n_test_out = cfg.n_test - cfg.n_test_in
+                _X_test_in = np.array([img_to_array(load_img(cfg.prosivic_test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
+                _X_test_out = np.array([img_to_array(load_img(cfg.prosivic_test_out_folder + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
+                _y_test_in  = np.ones((cfg.n_test_in,),dtype=np.int32)
                 _y_test_out = np.zeros((n_test_out,),dtype=np.int32)
                 self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
                 self.test_labels = np.concatenate([_y_test_in, _y_test_out])
@@ -121,6 +138,12 @@ class ALOCC_Model():
 
         self.grayscale = (self.c_dim == 1)
         self.build_model()
+
+        # Print dataset size
+        if self.is_training:
+            print("Training set size: ", len(self.data))
+        else:
+            print("Test set:\n\tInliers: %d\n\tOutliers: %d"%(cfg.n_test_in, n_test_out))
 
     def build_generator(self, input_shape):
         """Build the generator/R network.
@@ -170,7 +193,7 @@ class ALOCC_Model():
                 k_size = self.ae_architecture.filter_size[m]
                 stride = self.ae_architecture.stride[m]
                 channels = self.ae_architecture.channels[m]
-                for l in range(self.ae_architecture.n_conv_layers_per_module[m])
+                for l in range(self.ae_architecture.n_conv_layers_per_module[m]):
                     if l == self.ae_architecture.n_conv_layers_per_module[m] - 1: # last layer in module
                         stride = self.ae_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
                     x = Conv2D(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_encoder_h%d_%d_conv'%(m,l))(x)
@@ -179,7 +202,7 @@ class ALOCC_Model():
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
                     x = LeakyReLU()(x)
-                if self.max_pool:
+                if self.ae_architecture.max_pool:
                     x = MaxPool(self.ae_architecture.pool_size[m])(x)
             
             # Compute current image dimensions
@@ -190,9 +213,9 @@ class ALOCC_Model():
             channels_before_dense = self.ae_architecture.channels[-1]
             shape_before_dense = [height_before_dense,width_before_dense,channels_before_dense]
 
+            x = Flatten()(x)
             for d in range(self.ae_architecture.n_dense_layers):
-                x = Flatten()(x)
-                x = Dense(self.ae_architecture.n_dense_units[d], activation='None', name='g_encoder_h%d_lin'%d)(x)
+                x = Dense(self.ae_architecture.n_dense_units[d], name='g_encoder_h%d_lin'%d)(x)
                 if self.ae_architecture.use_batch_norm:
                     x = BatchNormalization()(x)
                 if self.ae_architecture.use_dropout:
@@ -201,16 +224,15 @@ class ALOCC_Model():
 
             # Decoder
             n_dense_units_flip = np.flip(self.ae_architecture.n_dense_units)[:-1]
-            n_dense_units_flip.extend(np.prod(shape_before_dense))
+            n_dense_units_flip = np.append(n_dense_units_flip,np.prod(shape_before_dense))
             n_conv_layers_per_module_flip = np.flip(self.ae_architecture.n_conv_layers_per_module)
-            channels_flip = np.flip(self.ae_architecture.channel_factor)[:-1]
-            channels_flip.extend(self.c_dim)
+            channels_flip = np.flip(self.ae_architecture.channels)[:-1]
+            channels_flip = np.append(channels_flip, self.c_dim)
             filter_size_flip = np.flip(self.ae_architecture.filter_size)
             stride_flip = np.flip(self.ae_architecture.stride)
 
             for d in range(self.ae_architecture.n_dense_layers):
-                x = Flatten()(x)
-                x = Dense(n_dense_units_flip[d], activation='None', name='g_decoder_h%d_lin'%d)(x)
+                x = Dense(n_dense_units_flip[d], name='g_decoder_h%d_lin'%d)(x)
                 if self.ae_architecture.use_batch_norm:
                     x = BatchNormalization()(x)
                 if self.ae_architecture.use_dropout:
@@ -224,20 +246,21 @@ class ALOCC_Model():
                 channels = channels_flip[m]
                 if self.ae_architecture.max_pool:
                     x = UpSampling2D((self.ae_architecture.pool_size,self.ae_architecture.pool_size))(x)
-                for l in range(n_conv_layers_per_module_flip[m])
-                    stride = stride_flip[m]
-                    k_size = filter_size_flip[m]
+                for l in range(n_conv_layers_per_module_flip[m]):
+                    stride = int(stride_flip[m])
+                    k_size = int(filter_size_flip[m])
                     if l == 0: # last layer in module
                         stride = self.ae_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
                     if self.ae_architecture.max_pool:
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same',  name='g_decoder_h%d_%d_conv'%(m,l))(x)
-                    else: 
-                        outpad = (k_size-stride)%2
-                        inpad = (k_size-stride+outpad)//2
-                        x = ZeroPadding2D((inpad,inpad))(x)
+                    else:
+                        outpad = int((k_size-stride)%2)
+                        inpad = int((k_size-stride+outpad)//2)
+                        print(inpad, type(inpad))
+                        x = ZeroPadding2D(padding=inpad)(x)
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         if self.ae_architecture.use_batch_norm:
-                        x = BatchNormalization()(x)
+                            x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
                     if m == self.ae_architecture.n_conv_modules - 1 and l == self.ae_architecture.n_conv_layers_per_module[m]-1:
@@ -290,7 +313,7 @@ class ALOCC_Model():
                 k_size = self.d_architecture.filter_size[m]
                 stride = self.d_architecture.stride[m]
                 channels = self.d_architecture.channels[m]
-                for l in range(self.d_architecture.n_conv_layers_per_module[m])
+                for l in range(self.d_architecture.n_conv_layers_per_module[m]):
                     if l == self.d_architecture.n_conv_layers_per_module[m] - 1: # last layer in module
                         stride = self.d_architecture.dim_red_stride[m] # sets stride to 2 in last layer if max_pool = False
                     x = Conv2D(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='d_h%d_%d_conv'%(m,l))(x)
@@ -299,9 +322,11 @@ class ALOCC_Model():
                     if self.d_architecture.use_dropout:
                         x = Dropout(self.d_architecture.dropout_rate)(x)
                     x = LeakyReLU()(x)
-                if self.max_pool:
+                    print("Added conv layer %d_%d"%(m,l))
+                    print("Shape: ", x.shape)
+                if self.d_architecture.max_pool:
                     x = MaxPool(self.d_architecture.pool_size[m])(x)
-            
+
             # Compute current image dimensions
             height_scale_factor = np.prod(self.d_architecture.dim_red_stride)
             height_before_dense = input_shape[0]//height_scale_factor
@@ -310,9 +335,9 @@ class ALOCC_Model():
             channels_before_dense = self.d_architecture.channels[-1]
             shape_before_dense = [height_before_dense,width_before_dense,channels_before_dense]
 
+            x = Flatten()(x)
             for d in range(self.d_architecture.n_dense_layers):
-                x = Flatten()(x)
-                x = Dense(self.d_architecture.n_dense_units[d], activation='None', name='d_h%d_lin'%d)(x)
+                x = Dense(self.d_architecture.n_dense_units[d], name='d_h%d_lin'%d)(x)
                 if self.d_architecture.use_batch_norm:
                     x = BatchNormalization()(x)
                 if self.d_architecture.use_dropout:
@@ -363,7 +388,7 @@ class ALOCC_Model():
         log_dir = os.path.join(self.log_dir, self.model_dir)
         os.makedirs(log_dir, exist_ok=True)
         
-        if self.dataset_name == 'mnist':
+        if self.dataset_name in ('mnist','prosivic','dreyeve'):
             # Get a batch of sample images with attention_label to export as montage.
             sample = self.data[0:batch_size]
 
@@ -378,7 +403,7 @@ class ALOCC_Model():
         plot_g_recon_losses = []
 
         # Load traning data, add random noise.
-        if self.dataset_name == 'mnist':
+        if self.dataset_name in ('mnist','prosivic','dreyeve'):
             sample_w_noise = get_noisy_data(self.data)
 
         # Adversarial ground truths
@@ -387,13 +412,13 @@ class ALOCC_Model():
 
         for epoch in range(epochs):
             print('Epoch ({}/{})-------------------------------------------------'.format(epoch,epochs))
-            if self.dataset_name == 'mnist':
+            if self.dataset_name in ('mnist','prosivic','dreyeve'):
                 # Number of batches computed by total number of target data / batch size.
                 batch_idxs = len(self.data) // batch_size
              
             for idx in range(0, batch_idxs):
                 # Get a batch of images and add random noise.
-                if self.dataset_name == 'mnist':
+                if self.dataset_name in ('mnist','prosivic','dreyeve'):
                     batch = self.data[idx * batch_size:(idx + 1) * batch_size]
                     batch_noise = sample_w_noise[idx * batch_size:(idx + 1) * batch_size]
                     batch_clean = self.data[idx * batch_size:(idx + 1) * batch_size]
@@ -401,7 +426,7 @@ class ALOCC_Model():
                 batch_images = np.array(batch).astype(np.float32)
                 batch_noise_images = np.array(batch_noise).astype(np.float32)
                 batch_clean_images = np.array(batch_clean).astype(np.float32)
-                if self.dataset_name == 'mnist':
+                if self.dataset_name in ('mnist','prosivic','dreyeve'):
                     batch_fake_images = self.generator.predict(batch_noise_images)
                     # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
                     d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
@@ -452,5 +477,5 @@ class ALOCC_Model():
 
 
 if __name__ == '__main__':
-    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=image_width)
-    model.train(epochs=n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))
+    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width)
+    model.train(epochs=cfg.n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))

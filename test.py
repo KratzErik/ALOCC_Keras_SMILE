@@ -14,35 +14,34 @@ from configuration import Configuration as cfg
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 #%matplotlib inline
 
-model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=image_width, is_training= False)
+model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False)
 load_epoch = cfg.load_epoch
-self.adversarial_model.load_weights(cfg.model_dir+'checkpoint/ALOCC_Model_%d.h5'%load_epoch)
+model.adversarial_model.load_weights(cfg.model_dir+'checkpoint/ALOCC_Model_%d.h5'%load_epoch)
 
 data = model.data
 batch_size = cfg.test_batch_size
 n_batches = len(data)//batch_size
-model_predicts = []
+scores = np.array([])
 
 for batch_idx in range(n_batches):
     batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
-    batch_predicts = model.adversarial_model.predict(batch_data])
-    model_predicts.extend(batch_predicts)
-
+    batch_scores = model.adversarial_model.predict(batch_data)[1]
+    scores = np.append(scores, batch_scores)
     if cfg.test_batch_verbose:
-        batch_labels = model.test_labelsdata[batch_idx * batch_size:(batch_idx + 1) * batch_size]
+        batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
         # Print metrics for batch
-        roc_auc_ = roc_auc_score(batch_labels, batch_predicts)
+        roc_auc_ = roc_auc_score(batch_labels, batch_scores)
         print("AUC ")
-        pr, rc = precision_recall_curve(batch_labels, batch_predicts)
+        pr, rc = precision_recall_curve(batch_labels, batch_scores)
         prc_auc = auc(rc, pr)
 
 # get final predics
-model_predicts.extend(model.adversarial_model.predict(data[n_batches*batch_size:]]))
+scores = np.append(scores,model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
-# Print metricsmodel.test_labels
-roc_auc = roc_auc_score(model.test_labels, model_predicts)
+# Print metrics
+roc_auc = roc_auc_score(model.test_labels, scores)
 print("AUROC:\t", roc_auc)
-pr, rc, _ = precision_recall_curve(model.test_labels, model_predicts)
+pr, rc, _ = precision_recall_curve(model.test_labels, scores)
 prc_auc = auc(rc, pr)
 print("AUPRC:\t", prc_auc)
 

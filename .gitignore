@@ -1,8 +1,14 @@
 *.h5
 __pycache__
-.ipynb_checkpoints/
-logs
-logs/
 *.log
+.pyc
+
+# Directories
+.ipynb_checkpoints/
 .vscode/
+log/
 sample/
+
+# Image files
+*.png
+*.jpg

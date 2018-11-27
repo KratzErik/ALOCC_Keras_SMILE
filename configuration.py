@@ -1,44 +1,56 @@
-import loadbdd100k
 from pathlib import Path
-from datetime.datetime import now
+import datetime
 class Configuration(object):
 
+    z_dim = 32
     # Architecture
-    d_n_conv_modules =  # number of conv. modules
-    self.n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-    self.n_dense_layers = 2 # number of dense layers in 
-    self.n_dense_units = model.z_dim
-
+    d_n_conv_modules =  4 # number of conv. modules
+    n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+    n_dense_layers = 2 # number of dense layers in 
+    n_dense_units = z_dim
     # put config variable definitions here
     n_epochs = 100
-    dataset = 'prosivic'
+    dataset = 'mnist'
     n_train = 100
     n_val = 50
     n_test = 100
-    n_test_in
+    n_test_in = 50
     out_frac = (n_test-n_test_in)/n_test
     train_batch_size = 64
-    image_height = 256
-    image_width = 256
-    channels = 3
+    if dataset in ('dreyeve','prosivic'):
+        image_height = 256
+        image_width = 256
+        channels = 3
+        batch_size = 64
+    elif dataset in ('mnist','mnist_vs_omniglot'):
+        image_height = 28
+        image_width = 28
+        channels = 1
+        batch_size = 128
+        n_test = 5000
+        n_test_in = 2500
+
     architecture = None
     # architecture = "0_5_0_8_512_5_2_2"
+    if dataset == 'mnist':
+        architecture = 'ALOCC_mnist'
+    max_pool = False
     use_batch_norm = True
     use_dropout = False
     dropout_rate = 0.1
-    experiment_name = ''
-    time_stamp = datetime.now().strftime("%y_%m_%d_kl%H_%M")
+    experiment_name = 'debug'
+    time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
 
     
     # test settings
-    load_epoch = 100
+    load_epoch = n_epochs-1
     test_batch_size = 64
     # generated config settings
-    log_dir = './log/'+dataset+'/'+experiment_name+'/'+time_stamp+'/'
+    log_dir = './log/'+dataset+'/'+experiment_name+'/'
     model_dir = log_dir+'models/'
     train_dir = log_dir+'train/'
     test_dir = log_dir+'test/'
-
+    test_batch_verbose = False
 
     # dataset specific options below
 
