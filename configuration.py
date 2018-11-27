@@ -2,6 +2,13 @@ from pathlib import Path
 import datetime
 class Configuration(object):
 
+    dataset = 'dreyeve'
+
+    # test settings
+    load_epoch = n_epochs-1
+    test_batch_size = 64
+
+
     z_dim = 32
     # Architecture
     d_n_conv_modules =  4 # number of conv. modules
@@ -10,14 +17,13 @@ class Configuration(object):
     n_dense_units = z_dim
     # put config variable definitions here
     n_epochs = 40
-    dataset = 'mnist'
     n_train = 100
     n_val = 50
     n_test = 100
     n_test_in = 50
     out_frac = (n_test-n_test_in)/n_test
     train_batch_size = 64
-    
+ 
     # Model hyper parameters
     r_alpha = 0.3
 
