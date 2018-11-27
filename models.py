@@ -31,7 +31,7 @@ class ALOCC_Model():
     def __init__(self,
                input_height=28,input_width=28, output_height=28, output_width=28,
                attention_label=1, is_training=True,
-               z_dim=100, gf_dim=16, df_dim=16, c_dim=3,
+               z_dim=100, gf_dim=64, df_dim=64, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
                checkpoint_dir=cfg.model_dir+'/checkpoint', log_dir=cfg.log_dir, sample_dir=cfg.train_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,

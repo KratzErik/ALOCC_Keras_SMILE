@@ -2,10 +2,10 @@ from pathlib import Path
 import datetime
 class Configuration(object):
 
-    dataset = 'prosivic' # will affect which dataset specific settings are used
+    dataset = 'mnist' # will affect which dataset specific settings are used
  
     # Model hyper parameters
-    r_alpha = 0.3
+    r_alpha = 0.2
 
     # Log settings
     experiment_name = 'tuning'
