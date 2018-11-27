@@ -448,11 +448,11 @@ class ALOCC_Model():
                 if np.mod(counter, sample_interval) == 0:
                     if self.dataset_name == 'mnist':
                         samples = self.generator.predict(sample_inputs)
-                        manifold_h = int(np.ceil(np.sqrt(samples.shape[0])))
-                        manifold_w = int(np.floor(np.sqrt(samples.shape[0])))
-                        save_images(samples, [manifold_h, manifold_w],
-                            './{}/train_{:02d}_{:04d}.png'.format(self.sample_dir, epoch, idx))
-
+                        #manifold_h = int(np.ceil(np.sqrt(samples.shape[0])))
+                        #manifold_w = int(np.floor(np.sqrt(samples.shape[0])))
+                        #save_images(samples, [manifold_h, manifold_w],
+                        #    './{}/train_{:02d}_{:04d}.png'.format(self.sample_dir, epoch, idx))
+                        scipy.misc.imsave(self.sample_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
             # Save the checkpoint end of each epoch.
             self.save(epoch)
         # Export the Generator/R network reconstruction losses as a plot.
@@ -472,6 +472,7 @@ class ALOCC_Model():
         plt.plot(plot_epochs,plot_d_real_losses)
         plt.savefig(cfg.train_dir+'plot_d_real_losses.png')
 
+        plt.clf()
         # Export the discriminator losses for fake images as a plot.
         plt.title('Discriminator loss for fake images (should be 0)')
         plt.xlabel('Epoch')
