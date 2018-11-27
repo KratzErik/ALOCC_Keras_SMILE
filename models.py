@@ -323,8 +323,6 @@ class ALOCC_Model():
                     if self.d_architecture.use_dropout:
                         x = Dropout(self.d_architecture.dropout_rate)(x)
                     x = LeakyReLU()(x)
-                    print("Added conv layer %d_%d"%(m,l))
-                    print("Shape: ", x.shape)
                 if self.d_architecture.max_pool:
                     x = MaxPool(self.d_architecture.pool_size[m])(x)
 
@@ -456,7 +454,9 @@ class ALOCC_Model():
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.sample_dir, epoch, idx))
                         scipy.misc.imsave(self.sample_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
             # Save the checkpoint end of each epoch.
-            self.save(epoch)
+            if epoch % cfg.checkpoint_interval == 0:
+                self.save(epoch)
+
         # Export the Generator/R network reconstruction losses as a plot.
         plt.title('Generator/R network reconstruction losses')
         plt.xlabel('Epoch')

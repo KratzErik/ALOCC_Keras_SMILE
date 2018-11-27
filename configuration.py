@@ -8,11 +8,11 @@ class Configuration(object):
     r_alpha = 0.3
 
     # Log settings
-    experiment_name = 'debug'
+    experiment_name = 'tuning'
     #time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
     
     # Test settings
-    load_epoch = 4
+    load_epoch = 10
     test_batch_size = 64
     test_batch_verbose = False
 
@@ -27,6 +27,7 @@ class Configuration(object):
         n_epochs = 40
         n_test = 5000
         n_test_in = 2500
+        checkpoint_interval = 2
 
     if dataset == "dreyeve":
         # Autoencoder architecture
@@ -75,6 +76,7 @@ class Configuration(object):
         n_test_in = 50
         out_frac = (n_test-n_test_in)/n_test
         batch_size = 64
+        checkpoint_interval = n_epochs//10
 
         # Data sources
         img_folder =   "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/"
@@ -86,17 +88,16 @@ class Configuration(object):
     elif dataset == "prosivic":
         hardcoded_architecture = None
         # Autoencoder architecture
-        ae_n_conv_modules =  4 # number of conv. modules
-        ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+        ae_n_conv_modules =  5 # number of conv. modules
+        ae_n_conv_layers_per_module = 2 # number of conv. layers in each module (between each pool layer/dim reduction)
         ae_n_dense_layers = 1 # number of dense layers in
         ae_z_dim = 256
         ae_n_dense_units = ae_z_dim
         ae_filter_size = 4
-        ae_stride = 2
+        ae_stride = 1
         ae_max_pool = False
         ae_pool_size = 2
         ae_first_layer_channels = 16
-        print(ae_first_layer_channels)
         ae_channels = [16 * 2**i for i in range(ae_n_conv_modules)] # TODO: replace number with ae_first_layer_channels
         ae_use_batch_norm = True
         ae_use_dropout = False
@@ -109,7 +110,7 @@ class Configuration(object):
         d_z_dim = 256
         d_n_dense_units = 1
         d_filter_size = 4
-        d_stride = 2
+        d_stride = 1
         d_max_pool = False
         d_pool_size = 2
         d_channels_first_layer = 16
@@ -119,13 +120,14 @@ class Configuration(object):
         d_dropout_rate = 0.1
 
         # Train settings
-        n_epochs = 5
-        n_train = 100
+        n_epochs = 500
+        n_train = 1000
         n_val = 50
-        n_test = 100
-        n_test_in = 50
+        n_test = 1000
+        n_test_in = 500
         out_frac = (n_test-n_test_in)/n_test
         batch_size = 64
+        checkpoint_interval = n_epochs//10
 
         # Data format
         image_height = 256
