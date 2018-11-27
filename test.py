@@ -51,13 +51,31 @@ prc_auc = auc(rc, pr)
 print("AUPRC:\t", prc_auc)
 
 # Save figures, etc, etc.
+inlier_idx = np.where(model.test_labels==1)[0]
+outlier_idx = np.where(model.test_labels==0)[0]
 
 # Histogram scores
-inlier_scores = scores[np.where(model.test_labels==1)[0]]
-outlier_scores = scores[np.where(model.test_labels==0)[0]]
+inlier_scores = scores[inlier_idx]
+outlier_scores = scores[outlier_idx]
 
-plt.hist(inlier_scores, alpha=0.5, label='Inliers')
-plt.hist(outlier_scores, alpha=0.5, label='Outliers')
+bins = 100
+plt.hist(inlier_scores, bins, alpha=0.5, label='Inliers')
+plt.hist(outlier_scores, bins, alpha=0.5, label='Outliers')
 plt.legend(loc='upper right')
 #plt.show()
 plt.savefig(cfg.test_dir+'scores_hist.png')
+
+# Plot some inliers with reconstructions
+sample_size = 32
+inlier_sample = model.data[np.random.choice(inlier_idx, sample_size//2)]
+outlier_sample = model.data[np.random.choice(outlier_idx, sample_size//2)]
+sample = np.concatenate([inlier_sample, outlier_sample])
+
+# Plot some outliers with reconstructions
+sample_predicts = model.adversarial_model.predict(sample)
+sample_recon = sample_predicts[0]
+sample_scores = sample_predicts[1]
+montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
+scipy.misc.imsave(cfg.test_dir+'test_reconstruction_samples.jpg', montage(montage_imgs))
+
+
