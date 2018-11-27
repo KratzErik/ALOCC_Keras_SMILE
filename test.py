@@ -38,6 +38,11 @@ for batch_idx in range(n_batches):
 # get final predics
 scores = np.append(scores,model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
+# Assert export dir exists
+if not os.path.exists(cfg.test_dir):
+    os.makedirs(cfg.test_dir)
+    print("Created directory %s" % cfg.test_dir)
+
 # Print metrics
 roc_auc = roc_auc_score(model.test_labels, scores)
 print("AUROC:\t", roc_auc)
@@ -47,3 +52,12 @@ print("AUPRC:\t", prc_auc)
 
 # Save figures, etc, etc.
 
+# Histogram scores
+inlier_scores = scores[np.where(model.test_labels==1)[0]]
+outlier_scores = scores[np.where(model.test_labels==0)[0]]
+
+plt.hist(inlier_scores, alpha=0.5, label='Inliers')
+plt.hist(outlier_scores, alpha=0.5, label='Outliers')
+plt.legend(loc='upper right')
+#plt.show()
+plt.savefig(cfg.test_dir+'scores_hist.png')
