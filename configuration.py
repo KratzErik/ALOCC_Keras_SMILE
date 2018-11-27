@@ -2,69 +2,80 @@ from pathlib import Path
 import datetime
 class Configuration(object):
 
-    dataset = 'dreyeve'
-
-    # test settings
-    load_epoch = n_epochs-1
-    test_batch_size = 64
-
-
-    z_dim = 32
-    # Architecture
-    d_n_conv_modules =  4 # number of conv. modules
-    n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-    n_dense_layers = 2 # number of dense layers in 
-    n_dense_units = z_dim
-    # put config variable definitions here
-    n_epochs = 40
-    n_train = 100
-    n_val = 50
-    n_test = 100
-    n_test_in = 50
-    out_frac = (n_test-n_test_in)/n_test
-    train_batch_size = 64
+    dataset = 'dreyeve' # will affect which dataset specific settings are used
  
     # Model hyper parameters
     r_alpha = 0.3
 
-    if dataset in ('dreyeve','prosivic'):
-        image_height = 256
-        image_width = 256
-        channels = 3
-        batch_size = 64
-    elif dataset in ('mnist','mnist_vs_omniglot'):
+    # Log settings
+    experiment_name = 'debug'
+    #time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
+    
+    # Test settings
+    load_epoch = n_epochs-1
+    test_batch_size = 64
+    test_batch_verbose = False
+
+    # Dataset specific settings below
+    if dataset == 'mnist':
+
         image_height = 28
         image_width = 28
         channels = 1
         batch_size = 128
+        hardcoded_architecture = 'ALOCC_mnist'
+        n_epochs = 40
         n_test = 5000
         n_test_in = 2500
 
-    architecture = None
-    # architecture = "0_5_0_8_512_5_2_2"
-    if dataset == 'mnist':
-        architecture = 'ALOCC_mnist'
-    max_pool = False
-    use_batch_norm = True
-    use_dropout = False
-    dropout_rate = 0.1
-    experiment_name = 'debug'
-    time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
-
-    
-    # test settings
-    load_epoch = n_epochs-1
-    test_batch_size = 64
-    # generated config settings
-    log_dir = './log/'+dataset+'/'+experiment_name+'/'
-    model_dir = log_dir+'models/'
-    train_dir = log_dir+'train/'
-    test_dir = log_dir+'test/'
-    test_batch_verbose = False
-
-    # dataset specific options below
-
     if dataset == "dreyeve":
+        # Autoencoder architecture
+        hardcoded_architecture = None
+        ae_n_conv_modules =  4 # number of conv. modules
+        ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+        ae_n_dense_layers = 1 # number of dense layers in 
+        ae_z_dim = 256
+        ae_n_dense_units = ae_z_dim
+        ae_filter_size = 4
+        ae_stride = 2
+        ae_max_pool = False
+        ae_pool_size = 2
+        ae_channels_first_layer = 32
+        ae_channels = [d_channels_first_layer * 2**i for i in range(ae_n_conv_modules)]
+        ae_use_batch_norm = True
+        ae_use_dropout = False
+        ae_dropout_rate = 0.1
+
+        # Discriminator architecture
+        d_n_conv_modules =  4 # number of conv. modules
+        d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+        d_n_dense_layers = 1 # number of dense layers in 
+        d_z_dim = 256
+        d_n_dense_units = 1
+        d_filter_size = 4
+        d_stride = 2
+        d_max_pool = False
+        d_pool_size = 2
+        d_channels_first_layer = 16
+        d_channels = [d_channels_first_layer * 2**i for i in range(d_n_conv_modules)]
+        d_use_batch_norm = True
+        d_use_dropout = False
+        d_dropout_rate = 0.1
+
+        # Data format
+        image_height = 256
+        image_width = 256
+        channels = 3
+
+        # Train settings
+        n_train = 100
+        n_val = 50
+        n_test = 100
+        n_test_in = 50
+        out_frac = (n_test-n_test_in)/n_test
+        batch_size = 64
+
+        # Data sources
         img_folder =   "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/"
         train_folder = "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/train/"
         val_folder =   "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/val/"
@@ -72,11 +83,49 @@ class Configuration(object):
         test_out_folder =  "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/test/out/"
     
     elif dataset == "prosivic":
+        hardcoded_architecture = None
+        # Autoencoder architecture
+        ae_n_conv_modules =  4 # number of conv. modules
+        ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+        ae_n_dense_layers = 1 # number of dense layers in 
+        ae_z_dim = 256
+        ae_n_dense_units = ae_z_dim
+        ae_filter_size = 4
+        ae_stride = 2
+        ae_max_pool = False
+        ae_pool_size = 2
+        ae_channels_first_layer = 16
+        ae_channels = [d_channels_first_layer * 2**i for i in range(ae_n_conv_modules)]
+        ae_use_batch_norm = True
+        ae_use_dropout = False
+        ae_dropout_rate = 0.1
+
+        # Discriminator architecture
+        d_n_conv_modules =  4 # number of conv. modules
+        d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
+        d_n_dense_layers = 1 # number of dense layers in 
+        d_z_dim = 256
+        d_n_dense_units = 1
+        d_filter_size = 4
+        d_stride = 2
+        d_max_pool = False
+        d_pool_size = 2
+        d_channels_first_layer = 16
+        d_channels = [d_channels_first_layer * 2**i for i in range(d_n_conv_modules)]
+        d_use_batch_norm = True
+        d_use_dropout = False
+        d_dropout_rate = 0.1
+
+        # Data format
+        image_height = 256
+        image_width = 256
+        channels = 3
+        batch_size = 64
         img_folder =   "../weather_detection_data/prosivic/"
         train_folder = "../weather_detection_data/prosivic/train/"
         val_folder =   "../weather_detection_data/prosivic/val/"
         test_in_folder =  "../weather_detection_data/prosivic/test/in/"
-        test_out_folder =  "../weather_detection_data/prosivic/test/out/"
+        test_out_folder =  "../weather_detection_data/prosivic/test/out/foggy/"
 
 
     elif dataset == "bdd100k":
@@ -94,6 +143,8 @@ class Configuration(object):
         architecture = "b1"
     
 
-    # Dataset specific parameters below
-
-
+    # generated config settings
+    log_dir = './log/'+dataset+'/'+experiment_name+'/'
+    model_dir = log_dir+'models/'
+    train_dir = log_dir+'train/'
+    test_dir = log_dir+'test/'

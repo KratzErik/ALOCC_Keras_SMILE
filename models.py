@@ -87,13 +87,13 @@ class ALOCC_Model():
 
         self.attention_label = attention_label
 
-        if cfg.architecture == 'ALOCC_mnist':
+        if cfg.hardcoded_architecture == 'ALOCC_mnist':
             print("Using original ALOCC architectures")
             self.ae_architecture = None
             self.d_architecture = None
         else:
-            self.ae_architecture = AE_Architecture(hardcoded = cfg.architecture)
-            self.d_architecture = D_Architecture(hardcoded = cfg.architecture)
+            self.ae_architecture = AE_Architecture(hardcoded = cfg.hardcoded_architecture)
+            self.d_architecture = D_Architecture(hardcoded = cfg.hardcoded_architecture)
         if self.is_training:
           logging.basicConfig(filename='ALOCC_loss.log', level=logging.INFO)
 
