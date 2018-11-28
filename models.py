@@ -35,9 +35,9 @@ class ALOCC_Model():
                attention_label=1, is_training=True,
                z_dim=100, gf_dim=64, df_dim=64, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
-               checkpoint_dir=cfg.model_dir+'/checkpoint', log_dir=cfg.log_dir, sample_dir=cfg.train_dir, r_alpha = 0.2,
+               log_dir=cfg.log_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
-               n_fetch_data=10):
+               n_fetch_data=10, outlier_dir = cfg.test_out_folder):
         """
         This is the main class of our Adversarially Learned One-Class Classifier for Novelty Detection.
         :param sess: TensorFlow session.
@@ -54,9 +54,7 @@ class ALOCC_Model():
         :param dataset_name: 'UCSD', 'mnist' or custom defined name.
         :param dataset_address: path to dataset folder. e.g. './dataset/mnist'.
         :param input_fname_pattern: Glob pattern of filename of input images e.g. '*'.
-        :param checkpoint_dir: path to saved checkpoint(s) directory.
-        :param log_dir: log directory for training, can be later viewed in TensorBoard.
-        :param sample_dir: Directory address which save some samples [.]
+        :param log_dir: log directory for checkpoints, training diagnostics and test results
         :param r_alpha: Refinement parameter, trade-off hyperparameter for the G network loss to reconstruct input images. [0.2]
         :param kb_work_on_patch: Boolean value for working on PatchBased System or not, only applies to UCSD dataset [True]
         :param nd_patch_size:  Input patch size, only applies to UCSD dataset.
@@ -65,7 +63,11 @@ class ALOCC_Model():
         """
 
         self.b_work_on_patch = kb_work_on_patch
-        self.sample_dir = sample_dir
+
+        # Create different log dirs
+        self.log_dir = log_dir
+        self.train_dir = os.path.join(self.log_dir, 'train')
+        self.checkpoint_dir = os.path.join(self.log_dir, 'models')
 
         self.is_training = is_training
 
@@ -84,8 +86,8 @@ class ALOCC_Model():
         self.dataset_name = dataset_name
         self.dataset_address= dataset_address
         self.input_fname_pattern = input_fname_pattern
-        self.checkpoint_dir = checkpoint_dir
-        self.log_dir = log_dir
+
+        self.outlier_dir = outlier_dir
 
         self.attention_label = attention_label
 
@@ -130,7 +132,7 @@ class ALOCC_Model():
             else: #load test data     
                 n_test_out = cfg.n_test - cfg.n_test_in
                 _X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
-                _X_test_out = np.array([img_to_array(load_img(cfg.test_out_folder + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
+                _X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
                 _y_test_in  = np.ones((len(_X_test_in),),dtype=np.int32)
                 _y_test_out = np.zeros((len(_X_test_out),),dtype=np.int32)
                 self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
@@ -389,8 +391,9 @@ class ALOCC_Model():
     
     def train(self, epochs, batch_size = 128, sample_interval=500):
         # Make log folder if not exist.
-        log_dir = os.path.join(self.log_dir, self.model_dir)
-        os.makedirs(log_dir, exist_ok=True)
+        os.makedirs(self.log_dir, exist_ok=True)
+        os.makedirs(self.checkpoint_dir)
+        os.makedirs(self.train_dir)
         
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
             # Get a batch of sample images with attention_label to export as montage.
@@ -398,8 +401,8 @@ class ALOCC_Model():
 
         # Export images as montage, sample_input also use later to generate sample R network outputs during training.
         sample_inputs = np.array(sample).astype(np.float32)
-        os.makedirs(self.sample_dir, exist_ok=True)
-        scipy.misc.imsave('./{}/train_input_samples.jpg'.format(self.sample_dir), montage(sample_inputs[:,:,:,0]))
+        os.makedirs(self.train_dir, exist_ok=True)
+        scipy.misc.imsave('./{}/train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
 
         counter = 1
         # Record generator/R network reconstruction training losses.
@@ -455,8 +458,8 @@ class ALOCC_Model():
                         #manifold_h = int(np.ceil(np.sqrt(samples.shape[0])))
                         #manifold_w = int(np.floor(np.sqrt(samples.shape[0])))
                         #save_images(samples, [manifold_h, manifold_w],
-                        #    './{}/train_{:02d}_{:04d}.png'.format(self.sample_dir, epoch, idx))
-                        scipy.misc.imsave(self.sample_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
+                        #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
+                        scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
             # Save the checkpoint end of each epoch.
             if epoch % cfg.checkpoint_interval == 0:
                 self.save(epoch)
@@ -527,12 +530,9 @@ if __name__ == '__main__':
     exp_name = args.exp_name
 
     log_dir = './log/'+dataset+'/'+experiment_name+'/'
-    log_dir+'models/'
-    train_dir = log_dir+'train/'
-    test_dir = log_dir+'test/'
 
     print("Dataset: ", dataset)
     print("Training for %d epochs"%epochs)
 
-    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, model_dir = model_dir)
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = )
     model.train(epochs=epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))

@@ -83,8 +83,9 @@ class Configuration(object):
         img_folder =   "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/"
         train_folder = "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/train/"
         val_folder =   "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/val/"
-        test_in_folder =  "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/test/out/"
-        test_out_folder =  "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/test/out/"
+        test_folder = "../weather_detection_data/dreyeve/highway_morning_sunny_vs_rainy/test/"
+        test_in_folder =  test_folder + "in/"
+        test_out_folder =  test_folder + "out/"
     
     elif dataset == "prosivic":
         hardcoded_architecture = None
@@ -140,8 +141,9 @@ class Configuration(object):
         img_folder =   "../weather_detection_data/prosivic/"
         train_folder = "../weather_detection_data/prosivic/train/"
         val_folder =   "../weather_detection_data/prosivic/val/"
-        test_in_folder =  "../weather_detection_data/prosivic/test/in/"
-        test_out_folder =  "../weather_detection_data/prosivic/test/out/foggy/"
+        test_folder = "../weather_detection_data/prosivic/test/
+        test_in_folder =  test_folder + "in/"
+        test_out_folder =  test_folder + "out/foggy/"
 
 
     elif dataset == "bdd100k":
