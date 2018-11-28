@@ -26,6 +26,8 @@ import numpy as np
 from utils import *
 from kh_tools import *
 
+from shutil import copyfile
+
 
 class ALOCC_Model():
     def __init__(self,
@@ -458,6 +460,11 @@ class ALOCC_Model():
             # Save the checkpoint end of each epoch.
             if epoch % cfg.checkpoint_interval == 0:
                 self.save(epoch)
+        # Save the last version of the network
+        self.save("final")
+
+        # Save configuration used for the training procedure
+        self.save_config()
 
         # Export the Generator/R network reconstruction losses as a plot.
         plt.title('Generator/R network reconstruction losses')
@@ -502,7 +509,11 @@ class ALOCC_Model():
         model_name = 'ALOCC_Model_{}.h5'.format(step)
         self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name))
 
-
+    def save_config(self): 
+        """ Save current state of configuration.py for reproduction purposes
+        """
+        copyfile('./configuration.py', cfg.log_dir+'configuration.py')
+        
 if __name__ == '__main__':
     model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha)
     model.train(epochs=cfg.n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))
