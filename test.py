@@ -17,7 +17,7 @@ import argparse
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--load_epoch', type=int, default=cfg.load_epoch, help='Epochs to train for')
+    parser.add_argument('--load_epoch', default="final", help='Training epoch to load model from')
     parser.add_argument('--dataset', default=cfg.dataset, help='Dataset to use (overrides configuration)')
     parser.add_argument('--exp_name', default=cfg.experiment_name, help='Name of experiment to load model from')
     parser.add_argument('--out_name', default=None, help = 'Which folder in ...test/out/ to use as outliers')
@@ -27,14 +27,16 @@ if __name__ == '__main__':
     exp_name = args.exp_name
     out_name = args.out_name
     load_epoch = args.load_epoch
-    model_dir ='log/'+dataset+'/'exp_name+'/models/'
+    model_dir ='log/'+dataset+'/'+exp_name+'/models/'
     if args.out_name is None:
         outlier_dir = cfg.test_out_folder
     else:
         outlier_dir = cfg.test_folder + "out/" + args.out_name + "/"
 
+    trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
+    print("Loading trained model from %s"%trained_model_path)
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir)
-    model.adversarial_model.load_weights(model_dir+'checkpoint/ALOCC_Model_%d.h5'%load_epoch)
+    model.adversarial_model.load_weights(trained_model_path)
 
     data = model.data
     batch_size = cfg.test_batch_size
@@ -66,9 +68,9 @@ if __name__ == '__main__':
     scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
     # Assert export dir exists
-    if not os.path.exists(cfg.test_dir):
-        os.makedirs(cfg.test_dir)
-        print("Created directory %s" % cfg.test_dir)
+    if not os.path.exists(model.test_dir):
+        os.makedirs(model.test_dir)
+        print("Created directory %s" % model.test_dir)
 
     # Print metrics
     fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
@@ -98,7 +100,7 @@ if __name__ == '__main__':
     plt.hist(outlier_scores, bins, alpha=0.5, label='Outliers')
     plt.legend(loc='upper right')
     #plt.show()
-    plt.savefig(cfg.test_dir+'scores_hist.png')
+    plt.savefig(model.test_dir+'scores_hist.png')
 
     # Plot some inliers with reconstructions
     sample_size = 32
@@ -111,7 +113,7 @@ if __name__ == '__main__':
     sample_recon = sample_predicts[0]
     sample_scores = sample_predicts[1]
     montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
-    scipy.misc.imsave(cfg.test_dir+'test_reconstruction_samples.jpg', montage(montage_imgs))
-    print("Sample scores:")
-    print(sample_scores)
+    scipy.misc.imsave(model.test_dir+'test_reconstruction_samples.jpg', montage(montage_imgs))
+#    print("Sample scores:")
+#    print(sample_scores)
 

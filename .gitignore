@@ -1,14 +1,10 @@
 *.h5
 __pycache__
 *.log
-.pyc
+*.pyc
 
 # Directories
-.ipynb_checkpoints/
-.vscode/
-log/
-sample/
+*.ipynb_checkpoints/
+*.vscode/
 
-# Image files
-*.png
-*.jpg
+sample/

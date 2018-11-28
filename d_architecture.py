@@ -12,20 +12,21 @@ class D_Architecture(object):
                     self.n_conv_layers_per_module = [self.n_conv_layers_per_module]*self.n_conv_modules
                 if isinstance(self.n_dense_units,int):
                     self.n_dense_units = [self.n_dense_units]*self.n_dense_layers
-                    
+
                 self.n_dense_units[-1] = 1 # final output is scalar
 
                 # Filters
                 self.filter_size = cfg.d_filter_size
                 self.stride = cfg.d_stride
-                self.channels = [8,16,32,64,128] # num output channels/filters in each conv. module
+                self.channels = cfg.d_channels # num output channels/filters in each conv. module
 
                 if isinstance(self.filter_size,int):
                     self.filter_size = [self.filter_size] * (self.n_conv_modules)
                 if isinstance(self.stride,int):
                     self.stride = [self.stride] * (self.n_conv_modules)
                 if isinstance(self.channels,int):
-                    self.channels = [self.channels] * (self.n_conv_modules-1)
+                    print("Using same num channels for all conv modules")
+                    self.channels = [self.channels] * (self.n_conv_modules)
 
                 # Other layers
                 self.max_pool = cfg.d_max_pool

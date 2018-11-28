@@ -68,9 +68,9 @@ class ALOCC_Model():
         self.log_dir = log_dir
         self.train_dir = os.path.join(self.log_dir, 'train')
         self.checkpoint_dir = os.path.join(self.log_dir, 'models')
+        self.test_dir = os.path.join(self.log_dir, 'test')
 
         self.is_training = is_training
-
         self.r_alpha = r_alpha
 
         self.input_height = input_height
@@ -132,7 +132,7 @@ class ALOCC_Model():
             else: #load test data     
                 n_test_out = cfg.n_test - cfg.n_test_in
                 _X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
-                _X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(cfg.test_out_folder)][:n_test_out])
+                _X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(self.outlier_dir)][:n_test_out])
                 _y_test_in  = np.ones((len(_X_test_in),),dtype=np.int32)
                 _y_test_out = np.zeros((len(_X_test_out),),dtype=np.int32)
                 self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
@@ -147,7 +147,7 @@ class ALOCC_Model():
         if self.is_training:
             print("Training set size: ", len(self.data))
         else:
-            print("Test set:\n\tInliers: %d\n\tOutliers: %d"%(cfg.n_test_in, n_test_out))
+            print("Test set:\n\tInliers: %d\n\tOutliers: %d"%(len(_X_test_in), len(_X_test_out)))
 
     def build_generator(self, input_shape):
         """Build the generator/R network.
@@ -388,13 +388,11 @@ class ALOCC_Model():
         print('\n\radversarial_model')
         self.adversarial_model.summary()
 
-    
+
     def train(self, epochs, batch_size = 128, sample_interval=500):
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
-        os.makedirs(self.checkpoint_dir)
-        os.makedirs(self.train_dir)
-        
+
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
             # Get a batch of sample images with attention_label to export as montage.
             sample = self.data[0:batch_size]
@@ -418,6 +416,8 @@ class ALOCC_Model():
         # Adversarial ground truths
         ones = np.ones((batch_size, 1))
         zeros = np.zeros((batch_size, 1))
+
+        checkpoint_interval = epochs // cfg.num_checkpoints
 
         for epoch in range(epochs):
             print('Epoch ({}/{})-------------------------------------------------'.format(epoch,epochs))
@@ -461,7 +461,7 @@ class ALOCC_Model():
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
             # Save the checkpoint end of each epoch.
-            if epoch % cfg.checkpoint_interval == 0:
+            if epoch % checkpoint_interval == 0:
                 self.save(epoch)
         # Save the last version of the network
         self.save("final")
@@ -520,19 +520,20 @@ class ALOCC_Model():
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
 
-    parser.add_argument('--epochs', type=int, default=cfg.n_epochs, help='Epochs to train for')
-    parser.add_argument('--dataset', default=cfg.dataset, help='Dataset to use (overrides configuration)')
-    parser.add_argument('--exp_name', default=cfg.exp_name, help='Unique name of experiment (overrides configuration)')
-
+    parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for')
+    parser.add_argument('--dataset', '-d', default=cfg.dataset, help='Dataset to use (overrides configuration)')
+    parser.add_argument('--exp_name', '-x', default=cfg.experiment_name, help='Unique name of experiment (overrides configuration)')
+    parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training')
     args=parser.parse_args()
     dataset = args.dataset
     epochs = args.epochs
     exp_name = args.exp_name
+    batch_size = args.batch_size
 
-    log_dir = './log/'+dataset+'/'+experiment_name+'/'
+    log_dir = './log/'+dataset+'/'+exp_name+'/'
 
     print("Dataset: ", dataset)
     print("Training for %d epochs"%epochs)
 
-    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = )
-    model.train(epochs=epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir)
+    model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))
