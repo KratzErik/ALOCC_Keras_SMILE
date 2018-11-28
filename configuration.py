@@ -8,11 +8,11 @@ class Configuration(object):
     r_alpha = 0.2
 
     # Log settings
-    experiment_name = 'tuning'
+    experiment_name = 'debug'
     #time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
     
     # Test settings
-    load_epoch = 10
+    load_epoch = 6
     test_batch_size = 64
     test_batch_verbose = False
 
@@ -24,10 +24,11 @@ class Configuration(object):
         channels = 1
         batch_size = 128
         hardcoded_architecture = 'ALOCC_mnist'
-        n_epochs = 40
+        n_epochs = 10
         n_test = 5000
         n_test_in = 2500
         checkpoint_interval = 2
+        n_train = 5000
 
     if dataset == "dreyeve":
         # Autoencoder architecture

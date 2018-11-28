@@ -41,6 +41,15 @@ for batch_idx in range(n_batches):
         pr, rc = precision_recall_curve(batch_labels, batch_scores)
         prc_auc = auc(rc, pr)
 
+    # debug: check what predicts contain
+    if batch_idx == 0:
+        imgs = batch_data[0:2]
+        predict = model.adversarial_model.predict(imgs)
+        print("predict[0]: ", predict[0].shape)
+        print("predict[1]: ", predict[1].shape, predict[1])
+
+# All scores computed, evaluate and document
+
 # get final predics
 scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
