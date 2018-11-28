@@ -27,7 +27,7 @@ from utils import *
 from kh_tools import *
 
 from shutil import copyfile
-
+import argparse
 
 class ALOCC_Model():
     def __init__(self,
@@ -515,5 +515,24 @@ class ALOCC_Model():
         copyfile('./configuration.py', cfg.log_dir+'configuration.py')
         
 if __name__ == '__main__':
-    model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha)
-    model.train(epochs=cfg.n_epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))
+    parser=argparse.ArgumentParser()
+
+    parser.add_argument('--epochs', type=int, default=cfg.n_epochs, help='Epochs to train for')
+    parser.add_argument('--dataset', default=cfg.dataset, help='Dataset to use (overrides configuration)')
+    parser.add_argument('--exp_name', default=cfg.exp_name, help='Unique name of experiment (overrides configuration)')
+
+    args=parser.parse_args()
+    dataset = args.dataset
+    epochs = args.epochs
+    exp_name = args.exp_name
+
+    log_dir = './log/'+dataset+'/'+experiment_name+'/'
+    log_dir+'models/'
+    train_dir = log_dir+'train/'
+    test_dir = log_dir+'test/'
+
+    print("Dataset: ", dataset)
+    print("Training for %d epochs"%epochs)
+
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, model_dir = model_dir)
+    model.train(epochs=epochs, batch_size=cfg.batch_size, sample_interval=min([500,cfg.n_train]))

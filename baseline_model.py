@@ -1,7 +1,7 @@
+import os
 from keras.preprocessing.image import load_img, img_to_array
 import numpy as np
-from configuration import Configuration as cfg'
-from sklearn.filters.rank import entropy
+from configuration import Configuration as cfg
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 
 class baseline_model():
@@ -34,7 +34,7 @@ class baseline_model():
         self.data = np.concatenate([X_test_in, X_test_out]) / 255.0
         print("Loaded data: %d inliers, %d outliers"%(len(X_test_in),len(X_test_out)))
         self.labels = np.concatenate([y_test_in, y_test_out])
-        print("Loaded labels: %d values"%len(labels))
+        print("Loaded labels: %d values"%len(self.labels))
 
     def score_images(self):
         if self.ad_score_type == 'mean':
@@ -43,7 +43,7 @@ class baseline_model():
         elif self.ad_score_type == 'mean_squared':
             self.scores = [np.square(img).mean() for img in self.data]
 
-    def test(self)
+    def test(self):
         print("Testing dataset %s with score function %s"%(self.dataset, self.ad_score_type))
         
         # Compute roc_auc
@@ -52,7 +52,7 @@ class baseline_model():
         print("AUROC:\t%.5f"%roc_auc)
 
         # Compute roc_auc
-        pr, rc = roc_curve(self.labels, self.scores)
+        pr, rc, _ = precision_recall_curve(self.labels, self.scores)
         roc_prc = auc(rc,pr)
         print("AUPRC:\t%.5f"%roc_prc)
 

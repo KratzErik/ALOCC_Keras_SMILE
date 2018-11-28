@@ -12,11 +12,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from configuration import Configuration as cfg
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
+import argparse
 #%matplotlib inline
+parser=argparse.ArgumentParser()
+parser.add_argument('--load_epoch', type=int, default=cfg.load_epoch, help='Epochs to train for')
+parser.add_argument('--dataset', default=cfg.dataset, help='Dataset to use (overrides configuration)')
+parser.add_argument('--exp_name', default=cfg.experiment_name, help='Name of experiment to load model from')
+parser.add_argument('--out_name', default=cfg.outlier_spec, help = 'Which folder in ...test/out/ to use as outliers')
 
-model = ALOCC_Model(dataset_name=cfg.dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False)
-load_epoch = cfg.load_epoch
-model.adversarial_model.load_weights(cfg.model_dir+'checkpoint/ALOCC_Model_%d.h5'%load_epoch)
+args=parser.parse_args()
+dataset = args.dataset
+exp_name = args.exp_name
+out_name = args.out_name
+load_epoch = args.load_epoch
+model_dir ='log/'+dataset+'/'exp_name+'/models/'
+
+model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False)
+model.adversarial_model.load_weights(model_dir+'checkpoint/ALOCC_Model_%d.h5'%load_epoch)
 
 data = model.data
 batch_size = cfg.test_batch_size

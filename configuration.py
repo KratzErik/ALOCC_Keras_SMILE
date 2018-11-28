@@ -8,9 +8,9 @@ class Configuration(object):
     r_alpha = 0.2
 
     # Log settings
-    experiment_name = 'debug'
+    experiment_name = '1_dense_layer'
     #time_stamp = datetime.datetime.now().strftime("%y_%m_%d_kl%H_%M")
-    
+
     # Test settings
     load_epoch = 90
     test_batch_size = 64
@@ -91,7 +91,7 @@ class Configuration(object):
         # Autoencoder architecture
         ae_n_conv_modules =  5 # number of conv. modules
         ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-        ae_n_dense_layers = 0 # number of dense layers in
+        ae_n_dense_layers = 1 # number of dense layers in
         ae_z_dim = 256
         ae_n_dense_units = ae_z_dim
         ae_filter_size = 4
@@ -141,7 +141,7 @@ class Configuration(object):
         train_folder = "../weather_detection_data/prosivic/train/"
         val_folder =   "../weather_detection_data/prosivic/val/"
         test_in_folder =  "../weather_detection_data/prosivic/test/in/"
-        test_out_folder =  "../weather_detection_data/prosivic/test/out/urban/"
+        test_out_folder =  "../weather_detection_data/prosivic/test/out/foggy/"
 
 
     elif dataset == "bdd100k":
