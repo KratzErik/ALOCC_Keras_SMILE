@@ -22,7 +22,8 @@ data = model.data
 batch_size = cfg.test_batch_size
 n_batches = len(data)//batch_size
 scores = np.array([])
-recon_errors = np.array([])
+# recon_errors = np.array([])
+
 for batch_idx in range(n_batches):
     batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
     batch_predicts = model.adversarial_model.predict(batch_data)
@@ -41,13 +42,6 @@ for batch_idx in range(n_batches):
         pr, rc = precision_recall_curve(batch_labels, batch_scores)
         prc_auc = auc(rc, pr)
 
-    # debug: check what predicts contain
-    if batch_idx == 0:
-        imgs = batch_data[0:2]
-        predict = model.adversarial_model.predict(imgs)
-        print("predict[0]: ", predict[0].shape)
-        print("predict[1]: ", predict[1].shape, predict[1])
-
 # All scores computed, evaluate and document
 
 # get final predics
@@ -59,10 +53,10 @@ if not os.path.exists(cfg.test_dir):
     print("Created directory %s" % cfg.test_dir)
 
 # Print metrics
-fpr, tpr, _ = roc_curve(model.test_labels, scores, pos_label = 0)
+fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
 roc_auc = auc(fpr,tpr)
 print("AUROC D():\t", roc_auc)
-pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 0)
+pr, rc, _ = precision_recall_curve(model.test_labels, -scores, pos_label = 0)
 prc_auc = auc(rc, pr)
 print("AUPRC: D()\t", prc_auc)
 
