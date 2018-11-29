@@ -33,7 +33,7 @@ class ALOCC_Model():
     def __init__(self,
                input_height=28,input_width=28, output_height=28, output_width=28,
                attention_label=1, is_training=True,
-               z_dim=100, gf_dim=64, df_dim=64, c_dim=3,
+               z_dim=100, gf_dim=16, df_dim=16, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
                log_dir=cfg.log_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
@@ -453,7 +453,7 @@ class ALOCC_Model():
                     plot_epochs.append(epoch+idx/batch_idxs)
                     plot_g_recon_losses.append(g_loss[1])
                 counter += 1
-                msg = 'Epoch:[{0}]-[{1}/{2}] --> d_loss: {3:>0.3f}, g_loss:{4:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch, idx, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
+                msg = 'Epoch:[{0}]-[{1}/{2}] --> d_loss: {3:>0.3f}, g_loss:{4:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1, idx+1, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
                 print(msg)
                 logging.info(msg)
                 if np.mod(counter, sample_interval) == 0:
@@ -463,7 +463,8 @@ class ALOCC_Model():
                         #manifold_w = int(np.floor(np.sqrt(samples.shape[0])))
                         #save_images(samples, [manifold_h, manifold_w],
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
-                        scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
+                        #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
+                        scipy.misc.imsave('./{}/train_{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
@@ -476,7 +477,7 @@ class ALOCC_Model():
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(plot_epochs,plot_g_recon_losses)
-        plt.savefig(cfg.train_dir+'plot_g_recon_losses.png')
+        plt.savefig(self.train_dir+'plot_g_recon_losses.png')
 
         plt.clf()
         # Export the discriminator losses for real images as a plot.
@@ -485,7 +486,7 @@ class ALOCC_Model():
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(plot_epochs,plot_d_real_losses)
-        plt.savefig(cfg.train_dir+'plot_d_real_losses.png')
+        plt.savefig(self.train_dir+'plot_d_real_losses.png')
 
         plt.clf()
         # Export the discriminator losses for fake images as a plot.
@@ -494,7 +495,7 @@ class ALOCC_Model():
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(plot_epochs,plot_d_fake_losses)
-        plt.savefig(cfg.train_dir+'plot_d_fake_losses.png')
+        plt.savefig(self.train_dir+'plot_d_fake_losses.png')
 
 
     @property
