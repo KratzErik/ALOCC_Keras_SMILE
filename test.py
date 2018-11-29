@@ -138,6 +138,6 @@ if __name__ == '__main__':
 
     # add log to configuration file
     with open(log_dir+'configuration.py','a') as outfile: # mode 'a' for append
-        for line in old_file:
+        for line in log:
             outfile.write(line)
         
