@@ -1,3 +1,6 @@
+# Training started at: 2018-11-29 13:15:15.824912
+# Training ended at: 2018-11-29 13:15:15.824912
+# Training duration: 0h 0m 12.89s
 from pathlib import Path
 import datetime
 class Configuration(object):

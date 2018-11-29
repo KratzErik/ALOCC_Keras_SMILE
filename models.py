@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import os
 from ae_architecture import AE_Architecture
 from d_architecture import D_Architecture
-from configuration import Configuration as cfg
+from configuration import Configuration
 from keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 import datetime
@@ -547,10 +547,10 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser()
 
 
-    parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for (overrides configuration.py')
-    parser.add_argument('--exp_name', '-x', default=None, help='Unique name of experiment (overrides configuration.py)')
-    parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training (overrides configuration.py)')
-    parser.add_argument('--dataset', '-d', default=None, help='Dataset to use for experiment (overrides configuration.py)')
+    parser.add_argument('--epochs', '-e', type=int, default=None, help='Epochs to train for (overrides configuration.py')
+    parser.add_argument('--exp_name', '-x', default='default', help='Unique name of experiment (overrides configuration.py)')
+    parser.add_argument('--batch_size', '-b', type=int, default=None, help='Size of minibatches during training (overrides configuration.py)')
+    parser.add_argument('--dataset', '-d', default='mnist', help='Dataset to use for experiment (overrides configuration.py)')
     
     args=parser.parse_args()
     epochs = args.epochs
@@ -559,6 +559,11 @@ if __name__ == '__main__':
     dataset = args.dataset
 
     cfg = Configuration(dataset, exp_name)
+
+    if epochs is None:
+        epochs = cfg.n_epochs
+    if batch_size is None:
+        batch_size = cfg.batch_size
 
     log_dir = './log/'+dataset+'/'+exp_name+'/'
 

@@ -18,17 +18,17 @@ import datetime
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--load_epoch', default='final', help='Training epoch to load model from')
-    parser.add_argument('--dataset', default='mnist', help='Dataset to use (overrides configuration)')
-    parser.add_argument('--exp_name', default='debug', help='Name of experiment to load model from')
-    parser.add_argument('--out_name', default=None, help = 'Which folder in ...test/out/ to use as outliers')
+    parser.add_argument('--load_epoch','-e', default='final', help='Training epoch to load model from')
+    parser.add_argument('--dataset', '-d', default='mnist', help='Dataset to use (overrides configuration)')
+    parser.add_argument('--exp_name', '-x', default='debug', help='Name of experiment to load model from')
+    parser.add_argument('--out_name', '-o', default=None, help = 'Which folder in ...test/out/ to use as outliers')
 
     args=parser.parse_args()
     dataset = args.dataset
     exp_name = args.exp_name
     out_name = args.out_name
     load_epoch = args.load_epoch
-    log_dir = 'log/'+dataset+'/'+exp_name+'/
+    log_dir = 'log/'+dataset+'/'+exp_name+'/'
     model_dir = log_dir + 'models/'
     test_dir =  log_dir + 'test/'
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
     print("Loading trained model from %s"%trained_model_path)
-    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir)
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir, cfg=cfg)
     model.adversarial_model.load_weights(trained_model_path)
 
     data = model.data
