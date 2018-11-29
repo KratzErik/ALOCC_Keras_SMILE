@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from configuration import Configuration as cfg
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 import argparse
+import datetime
 #%matplotlib inline
 
 if __name__ == '__main__':
@@ -27,13 +28,18 @@ if __name__ == '__main__':
     exp_name = args.exp_name
     out_name = args.out_name
     load_epoch = args.load_epoch
-    model_dir ='log/'+dataset+'/'+exp_name+'/models/'
-    test_dir ='log/'+dataset+'/'+exp_name+'/test/'
+    log_dir = 'log/'+dataset+'/'+exp_name+'/
+    model_dir = log_dir + 'models/'
+    test_dir =  log_dir + 'test/'
 
     if args.out_name is None:
         outlier_dir = cfg.test_out_folder
     else:
         outlier_dir = cfg.test_folder + "out/" + args.out_name + "/"
+
+    log = ["################################################################"]
+    test_time = datetime.datetime.now()
+    log.append("# Test started at: %s"%test_time)
 
     trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
     print("Loading trained model from %s"%trained_model_path)
@@ -82,9 +88,12 @@ if __name__ == '__main__':
     fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
     roc_auc = auc(fpr,tpr)
     print("AUROC D()-score:\t", roc_auc)
+    log.append("AUROC D()-score:\t", roc_auc)
+    
     pr, rc, _ = precision_recall_curve(model.test_labels, -scores, pos_label = 0)
     prc_auc = auc(rc, pr)
     print("AUPRC D()-score:\t", prc_auc)
+    log.append("AUPRC D()-score:\t", prc_auc)
 
     #fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
     #roc_auc = auc(fpr,tpr)
@@ -128,3 +137,10 @@ if __name__ == '__main__':
         sample_recon = sample_predicts[0]
         montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
         scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs))
+
+    # add log to configuration file
+
+    with open(log_dir+'configuration.py','w') as outfile:
+        for line in log:
+            outfile.write(line + '\n')
+        

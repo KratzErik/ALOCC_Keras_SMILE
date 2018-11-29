@@ -37,7 +37,7 @@ class ALOCC_Model():
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
                log_dir=cfg.log_dir, r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
-               n_fetch_data=10, outlier_dir = cfg.test_out_folder):
+               n_fetch_data=10, outlier_dir = cfg.test_out_folder, experiment_name = cfg.experiment_name):
         """
         This is the main class of our Adversarially Learned One-Class Classifier for Novelty Detection.
         :param sess: TensorFlow session.
@@ -90,6 +90,19 @@ class ALOCC_Model():
         self.outlier_dir = outlier_dir
 
         self.attention_label = attention_label
+
+        self.experiment_name = experiment_name
+
+        # Update config file and re-import
+        with open('./configuration.py','rw+') as f:
+            for line in f.readlines():
+                if "experiment_name = " in line:
+                    line = "    experiment_name = '%s'"%self.experiment_name
+                elif "dataset = " in line:
+                    line = "    dataset = '%s'"%self.dataset_name
+
+                outfile.write(line)
+        from configuration import Configuration as cfg
 
         if cfg.hardcoded_architecture == 'ALOCC_mnist':
             print("Using original ALOCC architectures")
@@ -544,17 +557,17 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for (overrides configuration.py')
     parser.add_argument('--exp_name', '-x', default=cfg.experiment_name, help='Unique name of experiment (overrides configuration.py)')
     parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training (overrides configuration.py)')
+    parser.add_argument('--dataset', '-d', default=cfg.dataset, help='Dataset to use for experiment (overrides configuration.py)')
     args=parser.parse_args()
     epochs = args.epochs
     exp_name = args.exp_name
     batch_size = args.batch_size
-
-    dataset = cfg.dataset
+    dataset = args.dataset
 
     log_dir = './log/'+dataset+'/'+exp_name+'/'
 
     print("Dataset: ", dataset)
     print("Training for %d epochs"%epochs)
 
-    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir)
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir, experiment_name=exp_name)
     model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))
