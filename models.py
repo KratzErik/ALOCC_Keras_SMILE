@@ -502,8 +502,8 @@ class ALOCC_Model():
         end_time = datetime.datetime.now()
         exp_duration = (end_time-start_time).total_seconds()
         config_prepend.append("Training ended: %s"%end_time.strftime("%A, %d. %B %Y %I:%M%p"))
-        config.prepend.append("Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
-        self.save_config()
+        config_prepend.append("Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
+        self.save_config(config_prepend)
 
     @property
     def model_dir(self):
