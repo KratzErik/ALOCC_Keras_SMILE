@@ -81,10 +81,10 @@ if __name__ == '__main__':
     # Print metrics
     fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
     roc_auc = auc(fpr,tpr)
-    print("AUROC D():\t", roc_auc)
+    print("AUROC D()-score:\t", roc_auc)
     pr, rc, _ = precision_recall_curve(model.test_labels, -scores, pos_label = 0)
     prc_auc = auc(rc, pr)
-    print("AUPRC: D()\t", prc_auc)
+    print("AUPRC D()-score:\t", prc_auc)
 
     #fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
     #roc_auc = auc(fpr,tpr)
@@ -128,4 +128,3 @@ if __name__ == '__main__':
         sample_recon = sample_predicts[0]
         montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
         scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs))
-

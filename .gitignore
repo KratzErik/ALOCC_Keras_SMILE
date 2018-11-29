@@ -1,10 +1,11 @@
+# File types
 *.h5
 __pycache__
 *.log
 *.pyc
+*.ipynb
 
 # Directories
 *.ipynb_checkpoints/
 *.vscode/
-
 sample/

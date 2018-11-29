@@ -66,9 +66,9 @@ class ALOCC_Model():
 
         # Create different log dirs
         self.log_dir = log_dir
-        self.train_dir = os.path.join(self.log_dir, 'train')
-        self.checkpoint_dir = os.path.join(self.log_dir, 'models')
-        self.test_dir = os.path.join(self.log_dir, 'test')
+        self.train_dir = self.log_dir + 'train/'
+        self.checkpoint_dir = self.log_dir + 'models/'
+        self.test_dir = self.log_dir + 'test/'
 
         self.is_training = is_training
         self.r_alpha = r_alpha
@@ -392,7 +392,6 @@ class ALOCC_Model():
     def train(self, epochs, batch_size = 128, sample_interval=500):
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
-        os.makedirs(self.train_dir,exist_ok=True)
         print('Diagnostics will be save to ', self.log_dir)
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
             # Get a batch of sample images with attention_label to export as montage.
@@ -401,7 +400,7 @@ class ALOCC_Model():
         # Export images as montage, sample_input also use later to generate sample R network outputs during training.
         sample_inputs = np.array(sample).astype(np.float32)
         os.makedirs(self.train_dir, exist_ok=True)
-        scipy.misc.imsave('./{}/train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
+        scipy.misc.imsave('./{}train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
 
         # Save configuration used for the training procedure
         self.save_config()
@@ -464,10 +463,12 @@ class ALOCC_Model():
                         #save_images(samples, [manifold_h, manifold_w],
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
-                        scipy.misc.imsave('./{}/train_{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
+                        scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
+
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
+
         # Save the last version of the network
         self.save("final")
 
@@ -481,7 +482,7 @@ class ALOCC_Model():
 
         plt.clf()
         # Export the discriminator losses for real images as a plot.
-        plt.title('Discriminator loss for real images (should be 1)')
+        plt.title('Discriminator loss for real images')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
@@ -490,7 +491,7 @@ class ALOCC_Model():
 
         plt.clf()
         # Export the discriminator losses for fake images as a plot.
-        plt.title('Discriminator loss for fake images (should be 0)')
+        plt.title('Discriminator loss for fake images')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
@@ -522,15 +523,15 @@ class ALOCC_Model():
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
 
-    parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for')
-    parser.add_argument('--dataset', '-d', default=cfg.dataset, help='Dataset to use (overrides configuration)')
-    parser.add_argument('--exp_name', '-x', default=cfg.experiment_name, help='Unique name of experiment (overrides configuration)')
-    parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training')
+    parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for (overrides configuration.py')
+    parser.add_argument('--exp_name', '-x', default=cfg.experiment_name, help='Unique name of experiment (overrides configuration.py)')
+    parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training (overrides configuration.py)')
     args=parser.parse_args()
-    dataset = args.dataset
     epochs = args.epochs
     exp_name = args.exp_name
     batch_size = args.batch_size
+
+    dataset = cfg.dataset
 
     log_dir = './log/'+dataset+'/'+exp_name+'/'
 
