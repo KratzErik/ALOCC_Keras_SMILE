@@ -313,10 +313,12 @@ def montage(images,saveto=None):
     img_w = images.shape[2]
     n_plots = int(np.ceil(np.sqrt(images.shape[0])))
     if len(images.shape) == 4 and images.shape[3] == 3:
+        print("Creating color image montage")
         m = np.ones(
             (images.shape[1] * n_plots + n_plots + 1,
              images.shape[2] * n_plots + n_plots + 1, 3)) * 0.5
     else:
+        print("Creating grayscale image montage")
         m = np.ones(
             (images.shape[1] * n_plots + n_plots + 1,
              images.shape[2] * n_plots + n_plots + 1)) * 0.5

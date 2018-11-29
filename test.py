@@ -138,7 +138,7 @@ if __name__ == '__main__':
         sample_predicts = model.adversarial_model.predict(sample)
         sample_recon = sample_predicts[0]
         montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
-        scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs[:,:,:,:]))
+        scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs))
 
     # add log to configuration file
 
