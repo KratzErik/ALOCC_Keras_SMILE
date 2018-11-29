@@ -8,6 +8,7 @@ class Configuration(object):
         self.r_alpha = 0.2
         self.learning_rate = 0.001
         self.optimizer = 'adam'
+        self.decay = 0.00001
 
         # Log settings
         self.experiment_name = experiment_name
@@ -117,21 +118,21 @@ class Configuration(object):
             self.d_stride = 1
             self.d_max_pool = False
             self.d_pool_size = 2
-            self.d_channels_first_layer = 16
+            self.d_channels_first_layer = 8
             self.d_channels = [8 * 2**i for i in range(self.d_n_conv_modules)] # TODO: replace number with d_channels_first_layer
             self.d_use_batch_norm = True
             self.d_use_dropout = False
             self.d_dropout_rate = 0.1
 
             # Train settings
-            self.n_epochs = 100
-            self.n_train = 100
-            self.n_val = 50
+            self.n_epochs = 1
+            self.n_train = 7000
+            self.n_val = 1400
             self.n_test = 1000
             self.n_test_in = 500
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
-            self.num_checkpoints  = 10
+            self.num_checkpoints  = 25
 
             # Data format
             self.image_height = 256
