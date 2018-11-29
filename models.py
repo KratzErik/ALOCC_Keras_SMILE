@@ -357,7 +357,12 @@ class ALOCC_Model():
 
     def build_model(self):
         image_dims = [self.input_height, self.input_width, self.c_dim]
-        optimizer = RMSprop(lr=0.002, clipvalue=1.0, decay=1e-8)
+
+        if  cfg.optimizer == 'adam':
+            optimizer = Adam(lr=cfg.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+        elif cfg.optimizer == 'rmsprop':
+            optimizer = RMSprop(lr=cfg.learning_rate, clipvalue=1.0, decay=1e-8)
+
         # Construct discriminator/D network takes real image as input.
         # D - sigmoid and D_logits -linear output.
         self.discriminator = self.build_discriminator(image_dims)
