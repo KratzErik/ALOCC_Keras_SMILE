@@ -10,7 +10,7 @@ from keras.losses import binary_crossentropy
 from keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
-from configuration import Configuration as cfg
+from configuration import Configuration
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 import argparse
 import datetime
@@ -18,9 +18,9 @@ import datetime
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--load_epoch', default="final", help='Training epoch to load model from')
-    parser.add_argument('--dataset', default=cfg.dataset, help='Dataset to use (overrides configuration)')
-    parser.add_argument('--exp_name', default=cfg.experiment_name, help='Name of experiment to load model from')
+    parser.add_argument('--load_epoch', default='final', help='Training epoch to load model from')
+    parser.add_argument('--dataset', default='mnist', help='Dataset to use (overrides configuration)')
+    parser.add_argument('--exp_name', default='debug', help='Name of experiment to load model from')
     parser.add_argument('--out_name', default=None, help = 'Which folder in ...test/out/ to use as outliers')
 
     args=parser.parse_args()
@@ -31,6 +31,8 @@ if __name__ == '__main__':
     log_dir = 'log/'+dataset+'/'+exp_name+'/
     model_dir = log_dir + 'models/'
     test_dir =  log_dir + 'test/'
+
+    cfg = Configuration(dataset, exp_name)
 
     if args.out_name is None:
         outlier_dir = cfg.test_out_folder

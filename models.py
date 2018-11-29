@@ -35,9 +35,9 @@ class ALOCC_Model():
                attention_label=1, is_training=True,
                z_dim=100, gf_dim=64, df_dim=64, c_dim=3,
                dataset_name=None, dataset_address=None, input_fname_pattern=None,
-               log_dir=cfg.log_dir, r_alpha = 0.2,
+               log_dir='./log', r_alpha = 0.2,
                kb_work_on_patch=True, nd_patch_size=(10, 10), n_stride=1,
-               n_fetch_data=10, outlier_dir = cfg.test_out_folder, experiment_name = cfg.experiment_name):
+               n_fetch_data=10, outlier_dir = '', experiment_name = '', cfg=None):
         """
         This is the main class of our Adversarially Learned One-Class Classifier for Novelty Detection.
         :param sess: TensorFlow session.
@@ -62,10 +62,13 @@ class ALOCC_Model():
         :param n_fetch_data: Fetch size of Data, only applies to UCSD dataset. 
         """
 
+        if cfg is None:
+            print("ERROR: No configuration for ALOCC model.")
+
         self.b_work_on_patch = kb_work_on_patch
 
         # Create different log dirs
-        self.log_dir = log_dir
+        self.log_dir = cfg.log_dir
         self.train_dir = self.log_dir + 'train/'
         self.checkpoint_dir = self.log_dir + 'models/'
         self.test_dir = self.log_dir + 'test/'
@@ -93,28 +96,13 @@ class ALOCC_Model():
 
         self.experiment_name = experiment_name
 
-        # Update config file and re-import
-        new_config = []
-        with open('./configuration.py','r') as f:
-            for line in f.readlines():
-                if "experiment_name = " in line:
-                    line = "    experiment_name = '%s'\n"%self.experiment_name
-                elif "dataset = " in line:
-                    line = "    dataset = '%s'\n"%self.dataset_name
-                new_config.append(line)
-        with open('./configuration.py','w') as f:
-            for line in new_config:
-                f.write(line)
-
-        from configuration import Configuration as cfg
-
         if cfg.hardcoded_architecture == 'ALOCC_mnist':
             print("Using original ALOCC architectures")
             self.ae_architecture = None
             self.d_architecture = None
         else:
-            self.ae_architecture = AE_Architecture(hardcoded = cfg.hardcoded_architecture)
-            self.d_architecture = D_Architecture(hardcoded = cfg.hardcoded_architecture)
+            self.ae_architecture = AE_Architecture(cfg = cfg)
+            self.d_architecture = D_Architecture(hardcoded = cfg)
         if self.is_training:
           logging.basicConfig(filename='ALOCC_loss.log', level=logging.INFO)
 
@@ -145,7 +133,7 @@ class ALOCC_Model():
             if self.is_training:
                 X_train = np.array([img_to_array(load_img(cfg.train_folder + filename)) for filename in os.listdir(cfg.train_folder)][:cfg.n_train])
                 self.data = X_train / 255.0
-                # self._X_val = [img_to_array(load_img(Cfg.prosivic_val_folder + filename)) for filename in os.listdir(Cfg.prosivic_val_folder)][:Cfg.prosivic_n_val] 
+                # self._X_val = [img_to_array(load_img(cfg.prosivic_val_folder + filename)) for filename in os.listdir(cfg.prosivic_val_folder)][:cfg.prosivic_n_val] 
             else: #load test data     
                 n_test_out = cfg.n_test - cfg.n_test_in
                 X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
@@ -558,20 +546,24 @@ class ALOCC_Model():
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
 
+
     parser.add_argument('--epochs', '-e', type=int, default=cfg.n_epochs, help='Epochs to train for (overrides configuration.py')
-    parser.add_argument('--exp_name', '-x', default=cfg.experiment_name, help='Unique name of experiment (overrides configuration.py)')
+    parser.add_argument('--exp_name', '-x', default=None, help='Unique name of experiment (overrides configuration.py)')
     parser.add_argument('--batch_size', '-b', type=int, default=cfg.batch_size, help='Size of minibatches during training (overrides configuration.py)')
-    parser.add_argument('--dataset', '-d', default=cfg.dataset, help='Dataset to use for experiment (overrides configuration.py)')
+    parser.add_argument('--dataset', '-d', default=None, help='Dataset to use for experiment (overrides configuration.py)')
+    
     args=parser.parse_args()
     epochs = args.epochs
     exp_name = args.exp_name
     batch_size = args.batch_size
     dataset = args.dataset
 
+    cfg = Configuration(dataset, exp_name)
+
     log_dir = './log/'+dataset+'/'+exp_name+'/'
 
     print("Dataset: ", dataset)
     print("Training for %d epochs"%epochs)
 
-    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir, experiment_name=exp_name)
+    model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir, experiment_name=exp_name, cfg = cfg)
     model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))
