@@ -1,15 +1,17 @@
+# Training started at: 2018-11-29 12:21:21.512753
+# Training ended at: 2018-11-29 12:21:21.512753
+# Training duration: 0h 0m 9.20s
 from pathlib import Path
 import datetime
 class Configuration(object):
 
-    dataset = 'mnist'
+    dataset = 'prosivic'    # Model hyper parameters
     r_alpha = 0.2
     learning_rate = 0.001
     optimizer = 'adam'
 
     # Log settings
-    experiment_name = 'debug2'
-
+    experiment_name = 'debug'
     # Test settings
     load_epoch = 90
     test_batch_size = 64

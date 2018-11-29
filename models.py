@@ -94,14 +94,18 @@ class ALOCC_Model():
         self.experiment_name = experiment_name
 
         # Update config file and re-import
-        with open('./configuration.py','rw+') as f:
+        new_config = []
+        with open('./configuration.py','r') as f:
             for line in f.readlines():
                 if "experiment_name = " in line:
-                    line = "    experiment_name = '%s'"%self.experiment_name
+                    line = "    experiment_name = '%s'\n"%self.experiment_name
                 elif "dataset = " in line:
-                    line = "    dataset = '%s'"%self.dataset_name
+                    line = "    dataset = '%s'\n"%self.dataset_name
+                new_config.append(line)
+        with open('./configuration.py','w') as f:
+            for line in new_config:
+                f.write(line)
 
-                outfile.write(line)
         from configuration import Configuration as cfg
 
         if cfg.hardcoded_architecture == 'ALOCC_mnist':
