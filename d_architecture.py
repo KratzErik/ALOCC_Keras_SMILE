@@ -2,7 +2,7 @@ from configuration import Configuration as cfg
 
 class D_Architecture(object):
         def __init__(self, cfg = None):
-            if cfg.hardcoded is None: # editable configuration
+            if cfg.hardcoded_architecture is None: # editable configuration
                 # Layers
                 self.n_conv_modules = cfg.d_n_conv_modules # number of conv. modules
                 self.n_conv_layers_per_module = cfg.d_n_conv_layers_per_module # number of conv. layers in each module (between each pool layer/dim reduction)
@@ -42,7 +42,7 @@ class D_Architecture(object):
                 else:
                     self.dim_red_stride = self.pool_size
 
-            if cfg.hardcoded == 'VGG16':
+            if cfg.hardcoded_architecture == 'VGG16':
                 self.n_conv_modules = 5 # number of conv. modules
                 self.n_conv_layers_per_module = [2,2,3,3,3] # number of conv. layers in each module (between each pool layer/dim reduction)
                 self.n_dense_layers = 3 # number of dense layers in 
