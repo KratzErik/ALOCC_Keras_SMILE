@@ -414,7 +414,7 @@ class ALOCC_Model():
         # Export images as montage, sample_input also use later to generate sample R network outputs during training.
         sample_inputs = np.array(sample).astype(np.float32)
         os.makedirs(self.train_dir, exist_ok=True)
-        scipy.misc.imsave('./{}train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
+        scipy.misc.imsave('./{}train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,:]))
 
         counter = 1
         # Record generator/R network reconstruction training losses.
@@ -476,7 +476,7 @@ class ALOCC_Model():
                         #save_images(samples, [manifold_h, manifold_w],
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples)))
-                        scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
+                        scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(samples[:,:,:,:])))
 
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
