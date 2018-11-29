@@ -131,12 +131,12 @@ class ALOCC_Model():
                 # self._X_val = [img_to_array(load_img(Cfg.prosivic_val_folder + filename)) for filename in os.listdir(Cfg.prosivic_val_folder)][:Cfg.prosivic_n_val] 
             else: #load test data     
                 n_test_out = cfg.n_test - cfg.n_test_in
-                _X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
-                _X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(self.outlier_dir)][:n_test_out])
-                _y_test_in  = np.ones((len(_X_test_in),),dtype=np.int32)
-                _y_test_out = np.zeros((len(_X_test_out),),dtype=np.int32)
-                self.data = np.concatenate([_X_test_in, _X_test_out]) / 255.0
-                self.test_labels = np.concatenate([_y_test_in, _y_test_out])
+                X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
+                X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(self.outlier_dir)][:n_test_out])
+                y_test_in  = np.ones((len(X_test_in),),dtype=np.int32)
+                y_test_out = np.zeros((len(X_test_out),),dtype=np.int32)
+                self.data = np.concatenate([X_test_in, X_test_out]) / 255.0
+                self.test_labels = np.concatenate([y_test_in, y_test_out])
         else:
           assert('Error in loading dataset')
 
@@ -147,7 +147,7 @@ class ALOCC_Model():
         if self.is_training:
             print("Training set size: ", len(self.data))
         else:
-            print("Test set:\n\tInliers: %d\n\tOutliers: %d"%(len(_X_test_in), len(_X_test_out)))
+            print("Test set:\n\tInliers: %d\n\tOutliers: %d"%(len(X_test_in), len(X_test_out)))
 
     def build_generator(self, input_shape):
         """Build the generator/R network.
@@ -392,7 +392,8 @@ class ALOCC_Model():
     def train(self, epochs, batch_size = 128, sample_interval=500):
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
-
+        os.makedirs(self.train_dir,exist_ok=True)
+        print('Diagnostics will be save to ', self.log_dir)
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
             # Get a batch of sample images with attention_label to export as montage.
             sample = self.data[0:batch_size]
@@ -401,6 +402,9 @@ class ALOCC_Model():
         sample_inputs = np.array(sample).astype(np.float32)
         os.makedirs(self.train_dir, exist_ok=True)
         scipy.misc.imsave('./{}/train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
+
+        # Save configuration used for the training procedure
+        self.save_config()
 
         counter = 1
         # Record generator/R network reconstruction training losses.
@@ -466,9 +470,6 @@ class ALOCC_Model():
         # Save the last version of the network
         self.save("final")
 
-        # Save configuration used for the training procedure
-        self.save_config()
-
         # Export the Generator/R network reconstruction losses as a plot.
         plt.title('Generator/R network reconstruction losses')
         plt.xlabel('Epoch')
@@ -515,7 +516,7 @@ class ALOCC_Model():
     def save_config(self): 
         """ Save current state of configuration.py for reproduction purposes
         """
-        copyfile('./configuration.py', cfg.log_dir+'configuration.py')
+        copyfile('./configuration.py', self.log_dir+'configuration.py')
         
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()

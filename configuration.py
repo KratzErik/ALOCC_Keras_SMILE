@@ -29,6 +29,7 @@ class Configuration(object):
         n_test_in = 2500
         num_checkpoints = 10
         n_train = 5000
+        test_out_folder = ''
 
     if dataset == "dreyeve":
         # Autoencoder architecture
@@ -71,7 +72,7 @@ class Configuration(object):
 
         # Train settings
         n_epochs = 100
-        n_train = 100
+        n_train = 6000
         n_val = 50
         n_test = 1200
         n_test_in = 600

@@ -28,6 +28,8 @@ if __name__ == '__main__':
     out_name = args.out_name
     load_epoch = args.load_epoch
     model_dir ='log/'+dataset+'/'+exp_name+'/models/'
+    test_dir ='log/'+dataset+'/'+exp_name+'/test/'
+
     if args.out_name is None:
         outlier_dir = cfg.test_out_folder
     else:
@@ -43,6 +45,10 @@ if __name__ == '__main__':
     n_batches = len(data)//batch_size
     scores = np.array([])
     # recon_errors = np.array([])
+
+    # NOTE: below, scores and true labels are inverted so that 0 <- 1, and 1 <- 0, to have 1 for the positive class, which is outliers
+#    scores = 1-scores
+#    model.test_labels = 1-model.test_labels
 
     for batch_idx in range(n_batches):
         batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -68,9 +74,9 @@ if __name__ == '__main__':
     scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
     # Assert export dir exists
-    if not os.path.exists(model.test_dir):
-        os.makedirs(model.test_dir)
-        print("Created directory %s" % model.test_dir)
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+        print("Created directory %s" % test_dir)
 
     # Print metrics
     fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
@@ -91,29 +97,35 @@ if __name__ == '__main__':
     inlier_idx = np.where(model.test_labels==1)[0]
     outlier_idx = np.where(model.test_labels==0)[0]
 
-    # Histogram scores
+    # Classwise scores
     inlier_scores = scores[inlier_idx]
     outlier_scores = scores[outlier_idx]
+
+    # Sort classes to obtain most normal and anomalous
+    in_perm = np.argsort(inlier_scores)
+    out_perm = np.argsort(outlier_scores)
 
     bins = 100
     plt.hist(inlier_scores, bins, alpha=0.5, label='Inliers')
     plt.hist(outlier_scores, bins, alpha=0.5, label='Outliers')
     plt.legend(loc='upper right')
     #plt.show()
-    plt.savefig(model.test_dir+'scores_hist.png')
+    print('Saving score histogram to ', test_dir+'scores_hist.png')
+    plt.savefig(test_dir+'scores_hist.png')
 
-    # Plot some inliers with reconstructions
-    sample_size = 32
-    inlier_sample = model.data[np.random.choice(inlier_idx, sample_size//2)]
-    outlier_sample = model.data[np.random.choice(outlier_idx, sample_size//2)]
-    sample = np.concatenate([inlier_sample, outlier_sample])
+    # Plot reconstructions
+    sample_size = 16
+    inlier_most_norm_sample = model.data[inlier_idx[in_perm[:sample_size]]]
+    inlier_most_out_sample = model.data[inlier_idx[in_perm[-sample_size:]]]
+    outlier_most_norm_sample = model.data[outlier_idx[out_perm[:sample_size]]]
+    outlier_most_out_sample = model.data[outlier_idx[out_perm[-sample_size:]]]
+    all_samples = [inlier_most_norm_sample, inlier_most_out_sample, outlier_most_norm_sample, outlier_most_out_sample]
+    sample_names = ['most_normal_inliers', 'most_anomalous_inliers', 'most_normal_outliers', 'most_anomalous_outliers']
 
-    # Plot some outliers with reconstructions
-    sample_predicts = model.adversarial_model.predict(sample)
-    sample_recon = sample_predicts[0]
-    sample_scores = sample_predicts[1]
-    montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
-    scipy.misc.imsave(model.test_dir+'test_reconstruction_samples.jpg', montage(montage_imgs))
-#    print("Sample scores:")
-#    print(sample_scores)
+    print('Saving reconstruction montages to ', test_dir)
+    for sample, name in zip(all_samples, sample_names):
+        sample_predicts = model.adversarial_model.predict(sample)
+        sample_recon = sample_predicts[0]
+        montage_imgs =np.squeeze(np.concatenate([[img1, img2] for img1, img2 in zip(sample, sample_recon)]))
+        scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs))
 

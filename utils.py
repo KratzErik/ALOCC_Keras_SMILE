@@ -293,7 +293,7 @@ def kh_make_patches(arr, patch_shape=2, extraction_step=1):
 
 
 	
-def montage(images, saveto='montage.png'):
+def montage(images,saveto=None):
     """
       Draw all images as a montage separated by 1 pixel borders.
       Also saves the file to the destination specified by `saveto`.
@@ -327,6 +327,8 @@ def montage(images, saveto='montage.png'):
                 this_img = images[this_filter]
                 m[1 + i + i * img_h:1 + i + (i + 1) * img_h,
                   1 + j + j * img_w:1 + j + (j + 1) * img_w] = this_img
-    plt.imsave(arr=m, fname=saveto)
+    if saveto is not None:
+        plt.imsave(arr=m, fname=saveto)
+
     return m
 
