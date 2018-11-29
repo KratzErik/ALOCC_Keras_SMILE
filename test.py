@@ -90,12 +90,12 @@ if __name__ == '__main__':
     fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
     roc_auc = auc(fpr,tpr)
     print("AUROC D()-score:\t", roc_auc)
-    log.append("AUROC D()-score:\t", roc_auc)
+    log.append("AUROC D()-score:\t%.5f"%roc_auc)
     
     pr, rc, _ = precision_recall_curve(model.test_labels, -scores, pos_label = 0)
     prc_auc = auc(rc, pr)
     print("AUPRC D()-score:\t", prc_auc)
-    log.append("AUPRC D()-score:\t", prc_auc)
+    log.append("AUPRC D()-score:\t%.5f"%prc_auc)
 
     #fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
     #roc_auc = auc(fpr,tpr)
