@@ -64,11 +64,12 @@ class ALOCC_Model():
 
         if cfg is None:
             print("ERROR: No configuration for ALOCC model.")
-
+        else:
+            self.cfg = cfg
         self.b_work_on_patch = kb_work_on_patch
 
         # Create different log dirs
-        self.log_dir = cfg.log_dir
+        self.log_dir = self.cfg.log_dir
         self.train_dir = self.log_dir + 'train/'
         self.checkpoint_dir = self.log_dir + 'models/'
         self.test_dir = self.log_dir + 'test/'
@@ -96,13 +97,13 @@ class ALOCC_Model():
 
         self.experiment_name = experiment_name
 
-        if cfg.hardcoded_architecture == 'ALOCC_mnist':
+        if self.cfg.hardcoded_architecture == 'ALOCC_mnist':
             print("Using original ALOCC architectures")
             self.ae_architecture = None
             self.d_architecture = None
         else:
-            self.ae_architecture = AE_Architecture(cfg = cfg)
-            self.d_architecture = D_Architecture(hardcoded = cfg)
+            self.ae_architecture = AE_Architecture(cfg = self.cfg)
+            self.d_architecture = D_Architecture(cfg = self.cfg)
         if self.is_training:
           logging.basicConfig(filename='ALOCC_loss.log', level=logging.INFO)
 
@@ -116,8 +117,8 @@ class ALOCC_Model():
           if self.is_training:
               self.data = inlier_data
           else: # load test data
-               X_test_in = inlier_data[np.random.choice(len(inlier_data), cfg.n_test_in, replace=False)]
-               n_test_out = cfg.n_test - cfg.n_test_in
+               X_test_in = inlier_data[np.random.choice(len(inlier_data), self.cfg.n_test_in, replace=False)]
+               n_test_out = self.cfg.n_test - self.cfg.n_test_in
                outlier_idx = np.where(y_train != self.attention_label)[0]
                outlier_data = X_train[outlier_idx].reshape(-1, 28, 28, 1)
                X_test_out = outlier_data[np.random.choice(len(outlier_data), n_test_out, replace=False)]
@@ -131,12 +132,12 @@ class ALOCC_Model():
         elif self.dataset_name in ('dreyeve','prosivic'):
             self.c_dim = 3
             if self.is_training:
-                X_train = np.array([img_to_array(load_img(cfg.train_folder + filename)) for filename in os.listdir(cfg.train_folder)][:cfg.n_train])
+                X_train = np.array([img_to_array(load_img(self.cfg.train_folder + filename)) for filename in os.listdir(self.cfg.train_folder)][:self.cfg.n_train])
                 self.data = X_train / 255.0
-                # self._X_val = [img_to_array(load_img(cfg.prosivic_val_folder + filename)) for filename in os.listdir(cfg.prosivic_val_folder)][:cfg.prosivic_n_val] 
+                # self._X_val = [img_to_array(load_img(self.cfg.prosivic_val_folder + filename)) for filename in os.listdir(self.cfg.prosivic_val_folder)][:self.cfg.prosivic_n_val] 
             else: #load test data     
-                n_test_out = cfg.n_test - cfg.n_test_in
-                X_test_in = np.array([img_to_array(load_img(cfg.test_in_folder + filename)) for filename in os.listdir(cfg.test_in_folder)][:cfg.n_test_in])
+                n_test_out = self.cfg.n_test - self.cfg.n_test_in
+                X_test_in = np.array([img_to_array(load_img(self.cfg.test_in_folder + filename)) for filename in os.listdir(self.cfg.test_in_folder)][:self.cfg.n_test_in])
                 X_test_out = np.array([img_to_array(load_img(self.outlier_dir + filename)) for filename in os.listdir(self.outlier_dir)][:n_test_out])
                 y_test_in  = np.ones((len(X_test_in),),dtype=np.int32)
                 y_test_out = np.zeros((len(X_test_out),),dtype=np.int32)
@@ -363,10 +364,10 @@ class ALOCC_Model():
     def build_model(self):
         image_dims = [self.input_height, self.input_width, self.c_dim]
 
-        if  cfg.optimizer == 'adam':
-            optimizer = Adam(lr=cfg.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-        elif cfg.optimizer == 'rmsprop':
-            optimizer = RMSprop(lr=cfg.learning_rate, clipvalue=1.0, decay=1e-8)
+        if  self.cfg.optimizer == 'adam':
+            optimizer = Adam(lr=self.cfg.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+        elif self.cfg.optimizer == 'rmsprop':
+            optimizer = RMSprop(lr=self.cfg.learning_rate, clipvalue=1.0, decay=1e-8)
 
         # Construct discriminator/D network takes real image as input.
         # D - sigmoid and D_logits -linear output.
@@ -430,7 +431,7 @@ class ALOCC_Model():
         ones = np.ones((batch_size, 1))
         zeros = np.zeros((batch_size, 1))
 
-        checkpoint_interval = max(epochs // cfg.num_checkpoints,1)
+        checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
 
         for epoch in range(epochs):
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))

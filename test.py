@@ -49,7 +49,7 @@ if __name__ == '__main__':
     model.adversarial_model.load_weights(trained_model_path)
 
     data = model.data
-    batch_size = cfg.test_batch_size
+    batch_size = model.cfg.test_batch_size
     n_batches = len(data)//batch_size
     scores = np.array([])
     # recon_errors = np.array([])
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         scores = np.append(scores, batch_scores)
     #    recon_errors = np.append(recon_errors, batch_recon_errors)
 
-        if cfg.test_batch_verbose:
+        if model.cfg.test_batch_verbose:
             batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
             # Print metrics for batch
             roc_auc_ = roc_auc_score(batch_labels, batch_scores)
