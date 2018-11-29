@@ -390,9 +390,9 @@ class ALOCC_Model():
 
 
     def train(self, epochs, batch_size = 128, sample_interval=500):
-        start_time = datetime.datetime.now
+        start_time = datetime.datetime.now()
         config_prepend = []
-        config_prepend.append("Training started at: %s"%start_time)
+        config_prepend.append("# Training started at: %s"%start_time)
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
         print('Diagnostics will be save to ', self.log_dir)
@@ -420,10 +420,10 @@ class ALOCC_Model():
         ones = np.ones((batch_size, 1))
         zeros = np.zeros((batch_size, 1))
 
-        checkpoint_interval = epochs // cfg.num_checkpoints
+        checkpoint_interval = max(epochs // cfg.num_checkpoints,1)
 
         for epoch in range(epochs):
-            print('Epoch ({}/{})-------------------------------------------------'.format(epoch,epochs))
+            print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
             if self.dataset_name in ('mnist','prosivic','dreyeve'):
                 # Number of batches computed by total number of target data / batch size.
                 batch_idxs = len(self.data) // batch_size
@@ -452,7 +452,7 @@ class ALOCC_Model():
                     plot_epochs.append(epoch+idx/batch_idxs)
                     plot_g_recon_losses.append(g_loss[1])
                 counter += 1
-                msg = 'Epoch:[{0}]-[{1}/{2}] --> d_loss: {3:>0.3f}, g_loss:{4:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1, idx+1, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
+                msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.3f}, g_loss:{5:>0.3f}, g_recon_loss:{6:>0.3f}'.format(epoch+1,epochs, idx+1, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
                 print(msg)
                 logging.info(msg)
                 if np.mod(counter, sample_interval) == 0:
@@ -500,9 +500,11 @@ class ALOCC_Model():
 
         # Save configuration used for the training procedure
         end_time = datetime.datetime.now()
+#        td = end_time-start_time
+#        print(type(end_time-start_time))
         exp_duration = (end_time-start_time).total_seconds()
-        config_prepend.append("Training ended: %s"%end_time.strftime("%A, %d. %B %Y %I:%M%p"))
-        config_prepend.append("Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
+        config_prepend.append("# Training ended at: %s"%start_time)
+        config_prepend.append("# Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
         self.save_config(config_prepend)
 
     @property
