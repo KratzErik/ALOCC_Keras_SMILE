@@ -54,9 +54,6 @@ if __name__ == '__main__':
     scores = np.array([])
     # recon_errors = np.array([])
 
-    # NOTE: below, scores and true labels are inverted so that 0 <- 1, and 1 <- 0, to have 1 for the positive class, which is outliers
-#    scores = 1-scores
-#    model.test_labels = 1-model.test_labels
 
     for batch_idx in range(n_batches):
         batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -116,9 +113,8 @@ if __name__ == '__main__':
     in_perm = np.argsort(inlier_scores)
     out_perm = np.argsort(outlier_scores)
 
-    bins = 100
-    plt.hist(inlier_scores, bins, alpha=0.5, label='Inliers')
-    plt.hist(outlier_scores, bins, alpha=0.5, label='Outliers')
+    plt.hist(inlier_scores, alpha=0.5, label='Inliers')
+    plt.hist(outlier_scores, alpha=0.5, label='Outliers')
     plt.legend(loc='upper right')
     #plt.show()
     print('Saving score histogram to ', test_dir+'scores_hist.png')
@@ -126,10 +122,10 @@ if __name__ == '__main__':
 
     # Plot reconstructions
     sample_size = 16
-    inlier_most_norm_sample = model.data[inlier_idx[in_perm[:sample_size]]]
-    inlier_most_out_sample = model.data[inlier_idx[in_perm[-sample_size:]]]
-    outlier_most_norm_sample = model.data[outlier_idx[out_perm[:sample_size]]]
-    outlier_most_out_sample = model.data[outlier_idx[out_perm[-sample_size:]]]
+    inlier_most_norm_sample = model.data[inlier_idx[in_perm[-sample_size:]]]
+    inlier_most_out_sample = model.data[inlier_idx[in_perm[:sample_size]]]
+    outlier_most_norm_sample = model.data[outlier_idx[out_perm[-sample_size:]]]
+    outlier_most_out_sample = model.data[outlier_idx[out_perm[:sample_size]]]
     all_samples = [inlier_most_norm_sample, inlier_most_out_sample, outlier_most_norm_sample, outlier_most_out_sample]
     sample_names = ['most_normal_inliers', 'most_anomalous_inliers', 'most_normal_outliers', 'most_anomalous_outliers']
 
@@ -141,8 +137,7 @@ if __name__ == '__main__':
         scipy.misc.imsave(test_dir+name+'_reconstructions.jpg', montage(montage_imgs))
 
     # add log to configuration file
-
-    with open(log_dir+'configuration.py','w') as outfile:
-        for line in log:
-            outfile.write(line + '\n')
+    with open(log_dir+'configuration.py','a') as outfile: # mode 'a' for append
+        for line in old_file:
+            outfile.write(line)
         
