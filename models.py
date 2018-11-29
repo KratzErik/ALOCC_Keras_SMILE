@@ -22,7 +22,7 @@ from d_architecture import D_Architecture
 from configuration import Configuration as cfg
 from keras.preprocessing.image import load_img, img_to_array
 import numpy as np
-
+import datetime
 from utils import *
 from kh_tools import *
 
@@ -390,6 +390,9 @@ class ALOCC_Model():
 
 
     def train(self, epochs, batch_size = 128, sample_interval=500):
+        start_time = datetime.datetime.now
+        config_prepend = []
+        config_prepend.append("Training started at: %s"%start_time)
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
         print('Diagnostics will be save to ', self.log_dir)
@@ -401,9 +404,6 @@ class ALOCC_Model():
         sample_inputs = np.array(sample).astype(np.float32)
         os.makedirs(self.train_dir, exist_ok=True)
         scipy.misc.imsave('./{}train_input_samples.jpg'.format(self.train_dir), montage(sample_inputs[:,:,:,0]))
-
-        # Save configuration used for the training procedure
-        self.save_config()
 
         counter = 1
         # Record generator/R network reconstruction training losses.
@@ -498,6 +498,12 @@ class ALOCC_Model():
         plt.plot(plot_epochs,plot_d_fake_losses)
         plt.savefig(self.train_dir+'plot_d_fake_losses.png')
 
+        # Save configuration used for the training procedure
+        end_time = datetime.datetime.now()
+        exp_duration = (end_time-start_time).total_seconds()
+        config_prepend.append("Training ended: %s"%end_time.strftime("%A, %d. %B %Y %I:%M%p"))
+        config.prepend.append("Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
+        self.save_config()
 
     @property
     def model_dir(self):
@@ -515,10 +521,15 @@ class ALOCC_Model():
         model_name = 'ALOCC_Model_{}.h5'.format(step)
         self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name))
 
-    def save_config(self): 
+    def save_config(self, prepend): 
         """ Save current state of configuration.py for reproduction purposes
         """
-        copyfile('./configuration.py', self.log_dir+'configuration.py')
+        with open(self.log_dir+'configuration.py','w') as outfile:
+            with open('./configuration.py','r') as infile:
+                for line in prepend:
+                    outfile.write(line+'\n')
+                for line in infile.readlines():
+                    outfile.write(line)
         
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
