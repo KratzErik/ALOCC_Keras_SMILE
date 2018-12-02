@@ -432,7 +432,7 @@ class ALOCC_Model():
         zeros = np.zeros((batch_size, 1))
 
         checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
-
+        epochs_start_time = datetime.datetime.now()
         for epoch in range(epochs):
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
             if self.dataset_name in ('mnist','prosivic','dreyeve'):
@@ -479,6 +479,10 @@ class ALOCC_Model():
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
+
+        epochs_end_time = datetime.datetime.now()
+        epochs_duration = (epochs_end_time-epochs_start_time).total_seconds()
+        s_per_epoch = epochs_duration/epochs
 
         # Save the last version of the network
         self.save("final")
@@ -530,6 +534,9 @@ class ALOCC_Model():
         exp_duration = (end_time-start_time).total_seconds()
         config_prepend.append("# Training ended at: %s"%start_time)
         config_prepend.append("# Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
+        config_prepend.append("# Training epochs: %d"%epochs)
+        config_prepend.append("# Seconds per epoch: %.3f"%s_per_epoch)
+
         self.save_config(config_prepend)
 
     @property

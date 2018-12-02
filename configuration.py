@@ -73,12 +73,13 @@ class Configuration(object):
             self.channels = 3
 
             # Train settings
+            self.data_divider = 1
             self.n_epochs = 100
-            self.n_train = 6000
-            self.n_val = 50
-            self.n_test = 1200
-            self.n_test_in = 600
-            self.out_frac = (n_test-n_test_in)/n_test
+            self.n_train = 6000//self.data_divider
+            self.n_val = 600//self.data_divider
+            self.n_test = 1200//self.data_divider
+            self.n_test_in = 600 // self.data_divider
+            self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
             self.num_checkpoints = 10
 
