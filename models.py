@@ -417,11 +417,11 @@ class ALOCC_Model():
         scipy.misc.imsave('./{}train_input_samples.jpg'.format(self.train_dir), montage(np.squeeze(sample_inputs)))
         counter = 1
         # Record generator/R network reconstruction training losses.
-        plot_epochs = []
-        plot_g_recon_losses = []
-        plot_g_val_losses = []
-        plot_d_real_losses = []
-        plot_d_fake_losses = []
+        self.plot_epochs = []
+        self.plot_g_recon_losses = []
+        self.plot_g_val_losses = []
+        self.plot_d_real_losses = []
+        self.plot_d_fake_losses = []
 
         # Load traning data, add random noise.
         if self.dataset_name in ('mnist','prosivic','dreyeve'):
@@ -454,15 +454,15 @@ class ALOCC_Model():
                     # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
                     d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
                     d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
-                    plot_d_real_losses.append(d_loss_real)
-                    plot_d_fake_losses.append(d_loss_fake)
+                    self.plot_d_real_losses.append(d_loss_real)
+                    self.plot_d_fake_losses.append(d_loss_fake)
 
                     # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
                     self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
                     g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])    
-                    plot_epochs.append(epoch+idx/batch_idxs)
-                    plot_g_recon_losses.append(g_loss[0])
-                    plot_g_val_losses .append(g_loss[1])
+                    self.plot_epochs.append(epoch+idx/batch_idxs)
+                    self.plot_g_recon_losses.append(g_loss[0])
+                    self.plot_g_val_losses .append(g_loss[1])
                 counter += 1
                 msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.3f}, g_loss:{5:>0.3f}, g_recon_loss:{6:>0.3f}'.format(epoch+1,epochs, idx+1, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
                 print(msg)
@@ -475,6 +475,7 @@ class ALOCC_Model():
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
+                    self.export_loss_plots()
 
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
@@ -486,46 +487,9 @@ class ALOCC_Model():
 
         # Save the last version of the network
         self.save("final")
+        self.export_loss_plots()
 
-        # Export the Generator/R network reconstruction losses as a plot.
-        plt.title('Generator/R network losses')
-        #plt.title('Generator/R network reconstruction losses')
-        plt.xlabel('Epoch')
-        plt.ylabel('training loss')
-        plt.grid()
-        plt.plot(plot_epochs,plot_g_recon_losses, label="Reconstruction loss")
-        #plt.savefig(self.train_dir+'plot_g_recon_losses.png')
 
-        # Export the Generator/R network validity losses as a plot.
-        #plt.title('Generator/R network reconstruction losses')
-        plt.xlabel('Epoch')
-        plt.ylabel('training loss')
-        plt.grid()
-        plt.plot(plot_epochs,plot_g_val_losses, label="Validity loss")
-#        plt.savefig(self.train_dir+'plot_g_recon_losses.png')
-        plt.legend()
-        plt.savefig(self.train_dir+'plot_g_losses.png')
-
-        plt.clf()
-        # Export the discriminator losses for real images as a plot.
-        plt.title('Discriminator loss for real/fake images')
-        #plt.title('Discriminator loss for real images')
-        plt.xlabel('Epoch')
-        plt.ylabel('training loss')
-        plt.grid()
-        plt.plot(plot_epochs,plot_d_real_losses, label="Real images")
-        #plt.savefig(self.train_dir+'plot_d_real_losses.png')
-
-        #plt.clf()
-        # Export the discriminator losses for fake images as a plot.
-        #plt.title('Discriminator loss for fake images')
-        plt.xlabel('Epoch')
-        plt.ylabel('training loss')
-        plt.grid()
-        plt.plot(plot_epochs,plot_d_fake_losses, label="Generator images")
-        plt.legend()
-        #plt.savefig(self.train_dir+'plot_d_fake_losses.png')
-        plt.savefig(self.train_dir+'plot_d_losses.png')
 
         # Save configuration used for the training procedure
         end_time = datetime.datetime.now()
@@ -564,6 +528,47 @@ class ALOCC_Model():
                     outfile.write(line+'\n')
                 for line in infile.readlines():
                     outfile.write(line)
+
+    def export_loss_plots(self):
+        # Export the Generator/R network reconstruction losses as a plot.
+        plt.title('Generator/R network losses')
+        #plt.title('Generator/R network reconstruction losses')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(self.plot_epochs,self.plot_g_recon_losses, label="Reconstruction loss")
+        #plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
+
+        # Export the Generator/R network validity losses as a plot.
+        #plt.title('Generator/R network reconstruction losses')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(self.plot_epochs,self.plot_g_val_losses, label="Validity loss")
+#        plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
+        plt.legend()
+        plt.savefig(self.train_dir+'plot_g_losses.png')
+
+        plt.clf()
+        # Export the discriminator losses for real images as a plot.
+        plt.title('Discriminator loss for real/fake images')
+        #plt.title('Discriminator loss for real images')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(self.plot_epochs,self.plot_d_real_losses, label="Real images")
+        #plt.savefig(self.train_dir+'self.plot_d_real_losses.png')
+
+        #plt.clf()
+        # Export the discriminator losses for fake images as a plot.
+        #plt.title('Discriminator loss for fake images')
+        plt.xlabel('Epoch')
+        plt.ylabel('training loss')
+        plt.grid()
+        plt.plot(self.plot_epochs,self.plot_d_fake_losses, label="Generator images")
+        plt.legend()
+        #plt.savefig(self.train_dir+'self.plot_d_fake_losses.png')
+        plt.savefig(self.train_dir+'plot_d_losses.png')
         
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
