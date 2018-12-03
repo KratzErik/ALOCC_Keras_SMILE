@@ -235,7 +235,7 @@ class ALOCC_Model():
 
             # Decoder
             if self.ae_architecture.n_dense_layers > 0:
-                n_dense_units_flip = np.flip(self.ae_architecture.n_dense_units)[:-1]
+                n_dense_units_flip = np.flip(self.ae_architecture.n_dense_units[:-1])
                 n_dense_units_flip = np.append(n_dense_units_flip,np.prod(shape_before_dense))
 
                 for d in range(self.ae_architecture.n_dense_layers):
@@ -249,7 +249,7 @@ class ALOCC_Model():
                 x = Reshape(shape_before_dense)(x)
 
             n_conv_layers_per_module_flip = np.flip(self.ae_architecture.n_conv_layers_per_module)
-            channels_flip = np.flip(self.ae_architecture.channels)[:-1]
+            channels_flip = np.flip(self.ae_architecture.channels[:-1])
             channels_flip = np.append(channels_flip, self.c_dim)
             filter_size_flip = np.flip(self.ae_architecture.filter_size)
             stride_flip = np.flip(self.ae_architecture.stride)
@@ -432,8 +432,9 @@ class ALOCC_Model():
         zeros = np.zeros((batch_size, 1))
 
         checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
-        epochs_start_time = datetime.datetime.now()
+        epochs_duration = 0
         for epoch in range(epochs):
+            epoch_start_time = datetime.datetime.now()
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
             if self.dataset_name in ('mnist','prosivic','dreyeve'):
                 # Number of batches computed by total number of target data / batch size.
@@ -476,13 +477,15 @@ class ALOCC_Model():
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
                     self.export_loss_plots()
+                # end of loop over batches
 
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
 
-        epochs_end_time = datetime.datetime.now()
-        epochs_duration = (epochs_end_time-epochs_start_time).total_seconds()
+            epoch_end_time = datetime.datetime.now()
+            epochs_duration += (epoch_start_time-epoch_end_time).total_seconds()
+
         s_per_epoch = epochs_duration/epochs
 
         # Save the last version of the network

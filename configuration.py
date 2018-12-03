@@ -90,11 +90,11 @@ class Configuration(object):
             self.test_folder = "../weather_detection_data/dreyeve/sunny_highway_countryside_morning_evening_vs_rainy_highway_countryside_morning_evening/test/"
             self.test_in_folder =  self.test_folder + "in/"
             self.test_out_folder =  self.test_folder + "out/"
-        
-        elif self.dataset == "prosivic":
+
+        if self.dataset == "prosivic":
             self.hardcoded_architecture = None
             # Autoencoder architecture
-            self.ae_n_conv_modules =  5 # number of conv. modules
+            self.ae_n_conv_modules =  4 # number of conv. modules
             self.ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.ae_n_dense_layers = 0 # number of dense layers in
             self.ae_z_dim = 256
