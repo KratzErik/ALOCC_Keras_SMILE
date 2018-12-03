@@ -401,9 +401,9 @@ class ALOCC_Model():
 
 
     def train(self, epochs, batch_size = 128, sample_interval=500):
-        start_time = datetime.datetime.now()
+        train_start_time = datetime.datetime.now()
         config_prepend = []
-        config_prepend.append("# Training started at: %s"%start_time)
+        config_prepend.append("# Training started at: %s"%train_start_time)
         # Make log folder if not exist.
         os.makedirs(self.log_dir, exist_ok=True)
         print('Diagnostics will be save to ', self.log_dir)
@@ -477,15 +477,20 @@ class ALOCC_Model():
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
                     self.export_loss_plots()
-                # end of loop over batches
+            # end of loop over batches
 
             # Save the checkpoint end of each epoch.
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
 
             epoch_end_time = datetime.datetime.now()
-            epochs_duration += (epoch_start_time-epoch_end_time).total_seconds()
-
+            this_epoch_time = (epoch_start_time-epoch_end_time).total_seconds()
+            epochs_duration += this_epoch_time
+            complete_epochs = epoch+1
+            ETA = (epochs-complete_epochs)*epochs_duration/complete_epochs
+            ETA_str = "%dh%dm%.2fs"%(ETA//3600,(ETA%3600)//60,ETA%60)
+            print('Epoch (%d/%d) complete.\tTime: %.2f\tETA: %s'%(epoch+1,epochs,this_epoch_time,ETA_str))
+        # end loop over epochs
         s_per_epoch = epochs_duration/epochs
 
         # Save the last version of the network
@@ -496,10 +501,8 @@ class ALOCC_Model():
 
         # Save configuration used for the training procedure
         end_time = datetime.datetime.now()
-#        td = end_time-start_time
-#        print(type(end_time-start_time))
-        exp_duration = (end_time-start_time).total_seconds()
-        config_prepend.append("# Training ended at: %s"%start_time)
+        exp_duration = (end_time-train_start_time).total_seconds()
+        config_prepend.append("# Training ended at: %s"%train_start_time)
         config_prepend.append("# Training duration: %dh %dm %.2fs"%(exp_duration//3600,(exp_duration//60)%60, exp_duration%60))
         config_prepend.append("# Training epochs: %d"%epochs)
         config_prepend.append("# Seconds per epoch: %.3f"%s_per_epoch)
