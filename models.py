@@ -236,10 +236,10 @@ class ALOCC_Model():
             # Decoder
             if self.ae_architecture.n_dense_layers > 0:
                 n_dense_units_flip = np.flip(self.ae_architecture.n_dense_units[:-1])
-                n_dense_units_flip = np.append(n_dense_units_flip,np.prod(shape_before_dense))
+                n_dense_units_flip = np.append(n_dense_units_flip,np.prod(shape_before_dense,dtype=int))
 
                 for d in range(self.ae_architecture.n_dense_layers):
-                    x = Dense(n_dense_units_flip[d], name='g_decoder_h%d_lin'%d)(x)
+                    x = Dense(int(n_dense_units_flip[d]), name='g_decoder_h%d_lin'%d)(x)
                     if self.ae_architecture.use_batch_norm:
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
@@ -484,7 +484,7 @@ class ALOCC_Model():
                 self.save(epoch)
 
             epoch_end_time = datetime.datetime.now()
-            this_epoch_time = (epoch_start_time-epoch_end_time).total_seconds()
+            this_epoch_time = (epoch_end_time-epoch_start_time).total_seconds()
             epochs_duration += this_epoch_time
             complete_epochs = epoch+1
             ETA = (epochs-complete_epochs)*epochs_duration/complete_epochs

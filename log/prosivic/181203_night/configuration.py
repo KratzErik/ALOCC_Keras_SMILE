@@ -1,3 +1,8 @@
+# Training started at: 2018-12-03 20:23:04.716316
+# Training ended at: 2018-12-03 20:23:04.716316
+# Training duration: 8h 20m 16.64s
+# Training epochs: 750
+# Seconds per epoch: 39.973
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -172,3 +177,9 @@ class Configuration(object):
         self.model_dir = self.log_dir+'models/'
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
+Num outliers: 250
+Num inliers: 250
+################################################################
+# Test started at: 2018-12-04 06:44:25.655925
+#AUROC D()-score:	0.39418
+#AUPRC D()-score:	0.44074
