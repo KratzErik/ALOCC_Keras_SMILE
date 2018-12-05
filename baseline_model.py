@@ -85,11 +85,8 @@ class baseline_model():
         roc_prc = auc(rc,pr)
         print("AUPRC:\t%.5f"%roc_prc)
 
-
-
-
 if __name__ == '__main__': # executed when file is ran with python3 energy_density_baseline.py
-    for score_type in ['mean', 'mean_squared']:
+    for score_type in ['mean', 'mean_squared','ocsvm']:
         model = baseline_model(ad_score_type = score_type, dataset = 'prosivic')
         if model.ad_score_type == "ocsvm":
             model.train()
