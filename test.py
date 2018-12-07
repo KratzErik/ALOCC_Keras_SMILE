@@ -14,6 +14,8 @@ from configuration import Configuration
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 import argparse
 import datetime
+import pickle
+
 #%matplotlib inline
 
 if __name__ == '__main__':
@@ -22,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', '-d', default='mnist', help='Dataset to use (overrides configuration)')
     parser.add_argument('--exp_name', '-x', default='debug', help='Name of experiment to load model from')
     parser.add_argument('--out_name', '-o', default=None, help = 'Which folder in ...test/out/ to use as outliers')
-
+    parser.add_argument('--export_results', 'r', default=False, help='If True, scores and labels will be pickled and saved automatically to directory for comparison with other algorithms')
     args=parser.parse_args()
     dataset = args.dataset
     exp_name = args.exp_name
@@ -54,6 +56,9 @@ if __name__ == '__main__':
     scores = np.array([])
     # recon_errors = np.array([])
 
+    # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
+    # and scores that increase with abnormality => flip labels 0 > 1 and 1 > 0
+    model.test_labels = 1 - model.test_labels
 
     for batch_idx in range(n_batches):
         batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -78,18 +83,29 @@ if __name__ == '__main__':
     # get final predics
     scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
 
+    # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
+    # and scores that increase with abnormality => flip scores so max becomes min, etc.
+    scores = scores.max()-scores
+
+    # Save scores and labels for comparison with other experiments
+    results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
+    if export_results:
+        with open(results_filepath,'wb') as f:
+                pickle.dump([scores,model.test_labels],f)
+            print("Saved results to %s"%results_filepath)
+    
     # Assert export dir exists
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
         print("Created directory %s" % test_dir)
 
     # Print metrics
-    fpr, tpr, _ = roc_curve(model.test_labels, -scores, pos_label = 0)
+    fpr, tpr, _ = roc_curve(model.test_labels, scores, pos_label = 1)
     roc_auc = auc(fpr,tpr)
     print("AUROC D()-score:\t", roc_auc)
     log.append("#AUROC D()-score:\t%.5f"%roc_auc)
     
-    pr, rc, _ = precision_recall_curve(model.test_labels, -scores, pos_label = 0)
+    pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 1)
     prc_auc = auc(rc, pr)
     print("AUPRC D()-score:\t", prc_auc)
     log.append("#AUPRC D()-score:\t%.5f"%prc_auc)
@@ -102,8 +118,8 @@ if __name__ == '__main__':
     #print("AUPRC: error\t", prc_auc)
 
     # Save figures, etc, etc.
-    inlier_idx = np.where(model.test_labels==1)[0]
-    outlier_idx = np.where(model.test_labels==0)[0]
+    inlier_idx = np.where(model.test_labels==0)[0]
+    outlier_idx = np.where(model.test_labels==1)[0]
 
     # Classwise scores
     inlier_scores = scores[inlier_idx]
