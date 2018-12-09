@@ -176,3 +176,9 @@ class Configuration(object):
         self.model_dir = self.log_dir+'models/'
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
+Num outliers: 500
+Num inliers: 500
+################################################################
+# Test started at: 2018-12-09 16:12:54.014613
+#AUROC D()-score:	0.00000
+#AUPRC D()-score:	0.30685
