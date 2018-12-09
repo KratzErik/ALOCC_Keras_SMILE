@@ -1,3 +1,8 @@
+# Training started at: 2018-12-07 20:54:22.301638
+# Training ended at: 2018-12-07 20:54:22.301638
+# Training duration: 13h 6m 20.94s
+# Training epochs: 500
+# Seconds per epoch: 94.220
 from pathlib import Path
 import datetime
 class Configuration(object):

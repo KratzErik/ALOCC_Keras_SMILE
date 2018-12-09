@@ -15,7 +15,8 @@ from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, au
 import argparse
 import datetime
 import pickle
-
+from shutil import copyfile
+import os
 #%matplotlib inline
 
 if __name__ == '__main__':
@@ -24,16 +25,16 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', '-d', default='mnist', help='Dataset to use (overrides configuration)')
     parser.add_argument('--exp_name', '-x', default='debug', help='Name of experiment to load model from')
     parser.add_argument('--out_name', '-o', default=None, help = 'Which folder in ...test/out/ to use as outliers')
-    parser.add_argument('--export_results', 'r', default=False, help='If True, scores and labels will be pickled and saved automatically to directory for comparison with other algorithms')
+    parser.add_argument('--export_results', '-r', default=False, help='If True, scores and labels will be pickled and saved automatically to directory for comparison with other algorithms')
     args=parser.parse_args()
     dataset = args.dataset
     exp_name = args.exp_name
     out_name = args.out_name
     load_epoch = args.load_epoch
+    export_results = bool(args.export_results)
     log_dir = 'log/'+dataset+'/'+exp_name+'/'
     model_dir = log_dir + 'models/'
     test_dir =  log_dir + 'test/'
-
     cfg = Configuration(dataset, exp_name)
 
     if args.out_name is None:
@@ -91,8 +92,8 @@ if __name__ == '__main__':
     results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
     if export_results:
         with open(results_filepath,'wb') as f:
-                pickle.dump([scores,model.test_labels],f)
-            print("Saved results to %s"%results_filepath)
+            pickle.dump([scores,model.test_labels],f)
+        print("Saved results to %s"%results_filepath)
     
     # Assert export dir exists
     if not os.path.exists(test_dir):

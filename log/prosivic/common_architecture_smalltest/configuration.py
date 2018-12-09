@@ -1,3 +1,8 @@
+# Training started at: 2018-12-07 20:38:46.172253
+# Training ended at: 2018-12-07 20:38:46.172253
+# Training duration: 0h 2m 14.81s
+# Training epochs: 2
+# Seconds per epoch: 49.929
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -55,7 +60,7 @@ class Configuration(object):
             self.d_n_conv_modules = 6 # number of conv. modules
             self.d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.d_n_dense_layers = 1 # number of dense layers in
-            self.d_z_dim = 512
+            self.d_z_dim = 256
             self.d_n_dense_units = 1
             self.d_filter_size = 4
             self.d_stride = 1
@@ -94,7 +99,7 @@ class Configuration(object):
         if self.dataset == "prosivic":
             self.hardcoded_architecture = None
             # Autoencoder architecture
-            self.ae_n_conv_modules =  5 # number of conv. modules
+            self.ae_n_conv_modules =  4 # number of conv. modules
             self.ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.ae_n_dense_layers = 1 # number of dense layers in
             self.ae_z_dim = 512
@@ -110,7 +115,7 @@ class Configuration(object):
             self.ae_dropout_rate = 0.1
 
             # Discriminator architecture
-            self.d_n_conv_modules =  5 # number of conv. modules
+            self.d_n_conv_modules =  4 # number of conv. modules
             self.d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.d_n_dense_layers = 1 # number of dense layers in
             self.d_z_dim = 512
@@ -127,19 +132,20 @@ class Configuration(object):
 
             # Train settings
             self.n_epochs = 1
-            self.data_div = 1
+            self.data_div = 2
             self.n_train = 7000 // self.data_div
             self.n_val = 1400 // self.data_div
             self.n_test = 1000 // self.data_div
             self.n_test_in = 500 // self.data_div
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
-            self.num_checkpoints  = 10
+            self.num_checkpoints  = 25
 
             # Data format
             self.image_height = 256
             self.image_width = 256
             self.channels = 3
+            self.batch_size = 64
 
             # Data sources
             self.img_folder =   "../weather_detection_data/prosivic/"
@@ -171,3 +177,9 @@ class Configuration(object):
         self.model_dir = self.log_dir+'models/'
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
+Num outliers: 250
+Num inliers: 250
+################################################################
+# Test started at: 2018-12-07 20:42:48.142454
+#AUROC D()-score:	0.50000
+#AUPRC D()-score:	0.75000
