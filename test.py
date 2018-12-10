@@ -94,7 +94,12 @@ if __name__ == '__main__':
         with open(results_filepath,'wb') as f:
             pickle.dump([scores,model.test_labels],f)
         print("Saved results to %s"%results_filepath)
-    
+        # Update data source dict with experiment name
+        common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
+        common_results_dict[dataset]["ALOCC"] == exp_name
+        pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
+        print("Updated entry ['%s']['ALOCC'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
+
     # Assert export dir exists
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
