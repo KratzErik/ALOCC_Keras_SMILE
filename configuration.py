@@ -103,14 +103,14 @@ class Configuration(object):
             self.ae_stride = 1 # will be set to ae_pool_size automatically if ae_max_pool is False
             self.ae_max_pool = False
             self.ae_pool_size = 2
-            self.ae_first_layer_channels = 8
+            self.ae_first_layer_channels = 16
             self.ae_channels = [16 * 2**i for i in range(self.ae_n_conv_modules)] # TODO: replace number with ae_first_layer_channels
             self.ae_use_batch_norm = True
             self.ae_use_dropout = False
             self.ae_dropout_rate = 0.1
 
             # Discriminator architecture
-            self.d_n_conv_modules =  5 # number of conv. modules
+            self.d_n_conv_modules =  4 # number of conv. modules
             self.d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.d_n_dense_layers = 1 # number of dense layers in
             self.d_z_dim = 512
@@ -119,8 +119,8 @@ class Configuration(object):
             self.d_stride = 1
             self.d_max_pool = False
             self.d_pool_size = 2
-            self.d_channels_first_layer = 16
-            self.d_channels = [16 * 2**i for i in range(self.d_n_conv_modules)] # TODO: replace number with d_channels_first_layer
+            self.d_channels_first_layer = 8
+            self.d_channels = [8 * 2**i for i in range(self.d_n_conv_modules)] # TODO: replace number with d_channels_first_layer
             self.d_use_batch_norm = True
             self.d_use_dropout = False
             self.d_dropout_rate = 0.1

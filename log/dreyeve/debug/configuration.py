@@ -1,8 +1,8 @@
-# Training started at: 2018-12-02 10:30:43.464924
-# Training ended at: 2018-12-02 10:30:43.464924
-# Training duration: 0h 0m 31.25s
+# Training started at: 2018-12-09 17:55:16.329766
+# Training ended at: 2018-12-09 17:55:16.329766
+# Training duration: 0h 3m 45.15s
 # Training epochs: 2
-# Seconds per epoch: 12.504
+# Seconds per epoch: 82.541
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -43,11 +43,11 @@ class Configuration(object):
             self.hardcoded_architecture = None
             self.ae_n_conv_modules = 6 # number of conv. modules
             self.ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-            self.ae_n_dense_layers = 0 # number of dense layers in
-            self.ae_z_dim = 256
+            self.ae_n_dense_layers = 1 # number of dense layers in
+            self.ae_z_dim = 512
             self.ae_n_dense_units = self.ae_z_dim
             self.ae_filter_size = 4
-            self.ae_stride = 1
+            self.ae_stride = 1 # will be set to ae_pool_size if ae_max_pool is False
             self.ae_max_pool = False
             self.ae_pool_size = 2
             self.ae_first_layer_channels = 16
@@ -60,7 +60,7 @@ class Configuration(object):
             self.d_n_conv_modules = 6 # number of conv. modules
             self.d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.d_n_dense_layers = 1 # number of dense layers in
-            self.d_z_dim = 256
+            self.d_z_dim = 512
             self.d_n_dense_units = 1
             self.d_filter_size = 4
             self.d_stride = 1
@@ -78,11 +78,12 @@ class Configuration(object):
             self.channels = 3
 
             # Train settings
+            self.data_divider = 1
             self.n_epochs = 100
-            self.n_train = 600
-            self.n_val = 50
-            self.n_test = 1200
-            self.n_test_in = 600
+            self.n_train = 6000//self.data_divider
+            self.n_val = 600//self.data_divider
+            self.n_test = 1200//self.data_divider
+            self.n_test_in = 600 // self.data_divider
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
             self.num_checkpoints = 10
@@ -94,17 +95,17 @@ class Configuration(object):
             self.test_folder = "../weather_detection_data/dreyeve/sunny_highway_countryside_morning_evening_vs_rainy_highway_countryside_morning_evening/test/"
             self.test_in_folder =  self.test_folder + "in/"
             self.test_out_folder =  self.test_folder + "out/"
-        
-        elif self.dataset == "prosivic":
+
+        if self.dataset == "prosivic":
             self.hardcoded_architecture = None
             # Autoencoder architecture
             self.ae_n_conv_modules =  5 # number of conv. modules
             self.ae_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
-            self.ae_n_dense_layers = 0 # number of dense layers in
-            self.ae_z_dim = 256
+            self.ae_n_dense_layers = 1 # number of dense layers in
+            self.ae_z_dim = 512
             self.ae_n_dense_units = self.ae_z_dim
             self.ae_filter_size = 4
-            self.ae_stride = 1
+            self.ae_stride = 1 # will be set to ae_pool_size automatically if ae_max_pool is False
             self.ae_max_pool = False
             self.ae_pool_size = 2
             self.ae_first_layer_channels = 16
@@ -117,7 +118,7 @@ class Configuration(object):
             self.d_n_conv_modules =  4 # number of conv. modules
             self.d_n_conv_layers_per_module = 1 # number of conv. layers in each module (between each pool layer/dim reduction)
             self.d_n_dense_layers = 1 # number of dense layers in
-            self.d_z_dim = 256
+            self.d_z_dim = 512
             self.d_n_dense_units = 1
             self.d_filter_size = 4
             self.d_stride = 1
@@ -131,19 +132,19 @@ class Configuration(object):
 
             # Train settings
             self.n_epochs = 1
-            self.n_train = 7000
-            self.n_val = 1400
-            self.n_test = 1000
-            self.n_test_in = 500
+            self.data_div = 1
+            self.n_train = 7000 // self.data_div
+            self.n_val = 1400 // self.data_div
+            self.n_test = 1000 // self.data_div
+            self.n_test_in = 500 // self.data_div
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
-            self.num_checkpoints  = 25
+            self.num_checkpoints  = 10
 
             # Data format
             self.image_height = 256
             self.image_width = 256
             self.channels = 3
-            self.batch_size = 64
 
             # Data sources
             self.img_folder =   "../weather_detection_data/prosivic/"
@@ -175,9 +176,3 @@ class Configuration(object):
         self.model_dir = self.log_dir+'models/'
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
-Num outliers: 600
-Num inliers: 600
-################################################################
-# Test started at: 2018-12-02 10:31:17.525039
-#AUROC D()-score:	0.83838
-#AUPRC D()-score:	0.78547

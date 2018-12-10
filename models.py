@@ -433,13 +433,11 @@ class ALOCC_Model():
 
         checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
         epochs_duration = 0
+        batch_idxs = len(self.data) // batch_size
+
         for epoch in range(epochs):
             epoch_start_time = datetime.datetime.now()
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
-            if self.dataset_name in ('mnist','prosivic','dreyeve'):
-                # Number of batches computed by total number of target data / batch size.
-                batch_idxs = len(self.data) // batch_size
-             
             for idx in range(0, batch_idxs):
                 # Get a batch of images and add random noise.
                 if self.dataset_name in ('mnist','prosivic','dreyeve'):
@@ -476,7 +474,7 @@ class ALOCC_Model():
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
-                    self.export_loss_plots()
+                    self.export_loss_plots(batch_idxs)
             # end of loop over batches
 
             # Save the checkpoint end of each epoch.
@@ -495,7 +493,7 @@ class ALOCC_Model():
 
         # Save the last version of the network
         self.save("final")
-        self.export_loss_plots()
+        self.export_loss_plots(batch_idxs)
 
 
 
@@ -535,14 +533,15 @@ class ALOCC_Model():
                 for line in infile.readlines():
                     outfile.write(line)
 
-    def export_loss_plots(self):
+    def export_loss_plots(self, point_interval):
         # Export the Generator/R network reconstruction losses as a plot.
+        plt.clf()
         plt.title('Generator/R network losses')
         #plt.title('Generator/R network reconstruction losses')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs,self.plot_g_recon_losses, label="Reconstruction loss")
+        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_g_recon_losses[point_interval::point_interval], label="Reconstruction loss")
         #plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
 
         # Export the Generator/R network validity losses as a plot.
@@ -550,7 +549,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs,self.plot_g_val_losses, label="Validity loss")
+        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_g_val_losses[point_interval::point_interval], label="Validity loss")
 #        plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
         plt.legend()
         plt.savefig(self.train_dir+'plot_g_losses.png')
@@ -562,7 +561,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs,self.plot_d_real_losses, label="Real images")
+        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_d_real_losses[point_interval::point_interval], label="Real images")
         #plt.savefig(self.train_dir+'self.plot_d_real_losses.png')
 
         #plt.clf()
@@ -571,7 +570,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs,self.plot_d_fake_losses, label="Generator images")
+        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_d_fake_losses[point_interval::point_interval], label="Generator images")
         plt.legend()
         #plt.savefig(self.train_dir+'self.plot_d_fake_losses.png')
         plt.savefig(self.train_dir+'plot_d_losses.png')

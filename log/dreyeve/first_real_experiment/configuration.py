@@ -182,3 +182,27 @@ Num inliers: 600
 # Test started at: 2018-12-09 16:11:57.881078
 #AUROC D()-score:	0.66407
 #AUPRC D()-score:	0.66182
+Num outliers: 600
+Num inliers: 600
+################################################################
+# Test started at: 2018-12-09 18:34:05.598109
+#AUROC D()-score:	0.31128
+#AUPRC D()-score:	0.38277
+Num outliers: 600
+Num inliers: 600
+################################################################
+# Test started at: 2018-12-09 18:34:34.294122
+#AUROC D()-score:	0.63682
+#AUPRC D()-score:	0.64840
+Num outliers: 600
+Num inliers: 600
+################################################################
+# Test started at: 2018-12-09 18:34:55.214389
+#AUROC D()-score:	0.69859
+#AUPRC D()-score:	0.69248
+Num outliers: 600
+Num inliers: 600
+################################################################
+# Test started at: 2018-12-09 18:35:17.939287
+#AUROC D()-score:	0.29768
+#AUPRC D()-score:	0.39450
