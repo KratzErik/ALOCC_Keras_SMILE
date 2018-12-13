@@ -7,6 +7,9 @@ class Configuration(object):
         self.dataset = dataset
         self.r_alpha = 0.2
         self.learning_rate = 0.001
+        self.learning_rate_drop = True
+        self.learning_rate_drop_epoch = 500
+        self.learning_rate_drop_factor = 10
         self.optimizer = 'adam'
         self.decay = 0.00001
 

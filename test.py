@@ -66,10 +66,10 @@ if __name__ == '__main__':
         batch_predicts = model.adversarial_model.predict(batch_data)
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
-    #    batch_recon_errors = np.array([K.eval(binary_crossentropy(K.variable(img), K.variable(recon))).mean() for img, recon in zip(batch_data, batch_recons)])
+        batch_recon_errors = binary_crossentropy(batch_data, batch_recons)
 
         scores = np.append(scores, batch_scores)
-    #    recon_errors = np.append(recon_errors, batch_recon_errors)
+        recon_errors = np.append(recon_errors, batch_recon_errors)
 
         if model.cfg.test_batch_verbose:
             batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -89,8 +89,8 @@ if __name__ == '__main__':
     scores = scores.max()-scores
 
     # Save scores and labels for comparison with other experiments
-    results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
     if export_results:
+        results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
         with open(results_filepath,'wb') as f:
             pickle.dump([scores,model.test_labels],f)
         print("Saved results to %s"%results_filepath)
@@ -99,6 +99,17 @@ if __name__ == '__main__':
         common_results_dict[dataset]["ALOCC"] == exp_name
         pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
         print("Updated entry ['%s']['ALOCC'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
+
+        # Export recon errors in the same way
+        results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_recon.pkl'%dataset
+        with open(results_filepath,'wb') as f:
+            pickle.dump([recon_errors,model.test_labels],f)
+        print("Saved reconstruction based results to %s"%results_filepath)
+        # Update data source dict with experiment name
+        common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
+        common_results_dict[dataset]["ALOCC_recon"] == exp_name
+        pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
+        print("Updated entry ['%s']['ALOCC_recon'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
 
     # Assert export dir exists
     if not os.path.exists(test_dir):
@@ -116,12 +127,12 @@ if __name__ == '__main__':
     print("AUPRC D()-score:\t", prc_auc)
     log.append("#AUPRC D()-score:\t%.5f"%prc_auc)
 
-    #fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
-    #roc_auc = auc(fpr,tpr)
-    #print("AUROC error:\t", roc_auc)
-    #pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
-    #prc_auc = auc(rc, pr)
-    #print("AUPRC: error\t", prc_auc)
+    fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
+    roc_auc_err = auc(fpr,tpr)
+    print("AUROC rec_err:\t", roc_auc_err)
+    pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
+    prc_auc_err = auc(rc, pr)
+    print("AUPRC: rec_err\t", prc_auc_err)
 
     # Save figures, etc, etc.
     inlier_idx = np.where(model.test_labels==0)[0]

@@ -438,6 +438,12 @@ class ALOCC_Model():
         for epoch in range(epochs):
             epoch_start_time = datetime.datetime.now()
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
+            if self.cfg.learning_rate_drop and (epoch+1) == self.cfg.learning_rate_drop_epoch
+                old_lr = optimizer.lr.get_value()
+                new_lr = old_lr/self.cfg.learning_rate_drop_factor
+                optimizer.lr.set_value(new_lr)
+                print("Learning rate change! %f -> %f"%(old_lr, new_lr))
+                
             for idx in range(0, batch_idxs):
                 # Get a batch of images and add random noise.
                 if self.dataset_name in ('mnist','prosivic','dreyeve'):
