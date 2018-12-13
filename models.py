@@ -365,16 +365,16 @@ class ALOCC_Model():
         image_dims = [self.input_height, self.input_width, self.c_dim]
 
         if  self.cfg.optimizer == 'adam':
-            optimizer = Adam(lr=self.cfg.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+            self.optimizer = Adam(lr=self.cfg.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         elif self.cfg.optimizer == 'rmsprop':
-            optimizer = RMSprop(lr=self.cfg.learning_rate, clipvalue=1.0, decay=1e-8)
+            selfoptimizer = RMSprop(lr=self.cfg.learning_rate, clipvalue=1.0, decay=1e-8)
 
         # Construct discriminator/D network takes real image as input.
         # D - sigmoid and D_logits -linear output.
         self.discriminator = self.build_discriminator(image_dims)
 
         # Model to train D to discrimate real images.
-        self.discriminator.compile(optimizer=optimizer, loss='binary_crossentropy')
+        self.discriminator.compile(optimizer=self.optimizer, loss='binary_crossentropy')
 
         # Construct generator/R network.
         self.generator = self.build_generator(image_dims)
@@ -390,7 +390,7 @@ class ALOCC_Model():
         self.adversarial_model = Model(img, [reconstructed_img, validity])
         self.adversarial_model.compile(loss=['binary_crossentropy', 'binary_crossentropy'],
             loss_weights=[self.r_alpha, 1],
-            optimizer=optimizer)
+            optimizer=self.optimizer)
 
         print('\n\rdiscriminator')
         self.discriminator.summary()
@@ -434,15 +434,16 @@ class ALOCC_Model():
         checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
         epochs_duration = 0
         batch_idxs = len(self.data) // batch_size
-
+        learning_rate_drop_epoch = int(epochs*self.cfg.learning_rate_drop_epochs_frac)
         for epoch in range(epochs):
             epoch_start_time = datetime.datetime.now()
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
-            if self.cfg.learning_rate_drop and (epoch+1) == self.cfg.learning_rate_drop_epoch
-                old_lr = optimizer.lr.get_value()
+            if self.cfg.learning_rate_drop and epoch == learning_rate_drop_epoch:
+                old_lr = K.eval(self.discriminator.optimizer.lr)
                 new_lr = old_lr/self.cfg.learning_rate_drop_factor
-                optimizer.lr.set_value(new_lr)
-                print("Learning rate change! %f -> %f"%(old_lr, new_lr))
+                K.set_value(self.discriminator.optimizer.lr, new_lr)
+                print("Learning rate change: %f -> %f"%(old_lr, new_lr))
+
                 
             for idx in range(0, batch_idxs):
                 # Get a batch of images and add random noise.

@@ -8,7 +8,7 @@ class Configuration(object):
         self.r_alpha = 0.2
         self.learning_rate = 0.001
         self.learning_rate_drop = True
-        self.learning_rate_drop_epoch = 500
+        self.learning_rate_drop_epochs_frac = 0.5
         self.learning_rate_drop_factor = 10
         self.optimizer = 'adam'
         self.decay = 0.00001
@@ -44,7 +44,7 @@ class Configuration(object):
             self.ae_n_dense_layers = 1 # number of dense layers in
             self.ae_z_dim = 512
             self.ae_n_dense_units = self.ae_z_dim
-            self.ae_filter_size = 4
+            self.ae_filter_size = 5
             self.ae_stride = 1 # will be set to ae_pool_size if ae_max_pool is False
             self.ae_max_pool = False
             self.ae_pool_size = 2
@@ -102,7 +102,7 @@ class Configuration(object):
             self.ae_n_dense_layers = 1 # number of dense layers in
             self.ae_z_dim = 512
             self.ae_n_dense_units = self.ae_z_dim
-            self.ae_filter_size = 4
+            self.ae_filter_size = 5
             self.ae_stride = 1 # will be set to ae_pool_size automatically if ae_max_pool is False
             self.ae_max_pool = False
             self.ae_pool_size = 2
@@ -129,10 +129,10 @@ class Configuration(object):
             self.d_dropout_rate = 0.1
 
             # Train settings
-            self.n_epochs = 1
+            self.n_epochs = 5
             self.data_div = 1
-            self.n_train = 7000 // self.data_div
-            self.n_val = 1400 // self.data_div
+            self.n_train = 6785 // self.data_div
+            self.n_val = 840 // self.data_div
             self.n_test = 1000 // self.data_div
             self.n_test_in = 500 // self.data_div
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     batch_size = model.cfg.test_batch_size
     n_batches = len(data)//batch_size
     scores = np.array([])
-    # recon_errors = np.array([])
+    recon_errors = np.array([])
 
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip labels 0 > 1 and 1 > 0
@@ -66,7 +66,8 @@ if __name__ == '__main__':
         batch_predicts = model.adversarial_model.predict(batch_data)
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
-        batch_recon_errors = binary_crossentropy(batch_data, batch_recons)
+        x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
+        batch_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
 
         scores = np.append(scores, batch_scores)
         recon_errors = np.append(recon_errors, batch_recon_errors)
@@ -78,12 +79,16 @@ if __name__ == '__main__':
             print("AUC ")
             pr, rc = precision_recall_curve(batch_labels, batch_scores)
             prc_auc = auc(rc, pr)
-
+        print("Tested batch %d/%d"%(batch_idx+1,n_batches))
     # All scores computed, evaluate and document
 
     # get final predics
-    scores = np.append(scores, model.adversarial_model.predict(data[n_batches*batch_size:])[1])
-
+    final_data = data[n_batches*batch_size:]
+    final_predicts = model.adversarial_model.predict(final_data)
+    scores = np.append(scores, final_predicts[1])
+    x = K.eval(binary_crossentropy(K.variable(final_data), K.variable(final_predicts[0])))
+    final_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
+    recon_errors = np.append(recon_errors, final_recon_errors)
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip scores so max becomes min, etc.
     scores = scores.max()-scores
