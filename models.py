@@ -96,6 +96,7 @@ class ALOCC_Model():
         self.attention_label = attention_label
 
         self.experiment_name = experiment_name
+        self.start_epoch = 0
 
         if self.cfg.hardcoded_architecture == 'ALOCC_mnist':
             print("Using original ALOCC architectures")
@@ -433,19 +434,24 @@ class ALOCC_Model():
 
         checkpoint_interval = max(epochs // self.cfg.num_checkpoints,1)
         epochs_duration = 0
-        batch_idxs = len(self.data) // batch_size
+        n_batches = len(self.data) // batch_size
         learning_rate_drop_epoch = int(epochs*self.cfg.learning_rate_drop_epochs_frac)
-        for epoch in range(epochs):
+        for epoch in range(self.start_epoch, epochs):
             epoch_start_time = datetime.datetime.now()
             print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
+            
             if self.cfg.learning_rate_drop and epoch == learning_rate_drop_epoch:
                 old_lr = K.eval(self.discriminator.optimizer.lr)
                 new_lr = old_lr/self.cfg.learning_rate_drop_factor
                 K.set_value(self.discriminator.optimizer.lr, new_lr)
                 print("Learning rate change: %f -> %f"%(old_lr, new_lr))
 
-                
-            for idx in range(0, batch_idxs):
+            d_loss_real_epoch = 0
+            d_loss_fake_epoch = 0
+            g_loss_val_epoch = 0
+            g_loss_recon_epoch = 0
+
+            for idx in range(0, n_batches):
                 # Get a batch of images and add random noise.
                 if self.dataset_name in ('mnist','prosivic','dreyeve'):
                     batch = self.data[idx * batch_size:(idx + 1) * batch_size]
@@ -460,19 +466,25 @@ class ALOCC_Model():
                     # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
                     d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
                     d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
-                    self.plot_d_real_losses.append(d_loss_real)
-                    self.plot_d_fake_losses.append(d_loss_fake)
-
+                    
                     # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
                     self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
                     g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])    
-                    self.plot_epochs.append(epoch+idx/batch_idxs)
-                    self.plot_g_recon_losses.append(g_loss[0])
-                    self.plot_g_val_losses .append(g_loss[1])
+                    g_loss_recon = g_loss[0]
+                    g_loss_val = g_loss[1]
+
+                    # Update arrays for plotting
+                    d_loss_real_epoch  += d_loss_real
+                    d_loss_fake_epoch  += d_loss_fake
+                    g_loss_val_epoch   += g_loss_val
+                    g_loss_recon_epoch += g_loss_recon
+                    
                 counter += 1
-                msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.3f}, g_loss:{5:>0.3f}, g_recon_loss:{6:>0.3f}'.format(epoch+1,epochs, idx+1, batch_idxs, d_loss_real+d_loss_fake, g_loss[0], g_loss[1])
-                print(msg)
-                logging.info(msg)
+                if self.cfg.print_batch_loss:
+                    msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.3f}, g_val_loss:{5:>0.3f}, g_recon_loss:{6:>0.3f}'.format(epoch+1,epochs, idx+1, n_batches, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)
+                    print(msg)
+                    logging.info(msg)
+
                 if np.mod(counter, sample_interval) == 0:
                     samples = self.generator.predict(sample_inputs)
                         #manifold_h = int(np.ceil(np.sqrt(samples.shape[0])))
@@ -481,12 +493,29 @@ class ALOCC_Model():
                         #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
                         #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
-                    self.export_loss_plots(batch_idxs)
+            
             # end of loop over batches
 
-            # Save the checkpoint end of each epoch.
+            # Print epoch loss
+            d_loss_real_epoch  = d_loss_real_epoch / n_batches
+            d_loss_fake_epoch  = d_loss_fake_epoch / n_batches
+            g_loss_val_epoch   = g_loss_val_epoch / n_batches
+            g_loss_recon_epoch = g_loss_recon_epoch / n_batches
+
+            msg = 'Epoch:[{0}/{1}] --> d_loss: {2:>0.3f}, g_val_loss:{3:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1,epochs, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)
+            print(msg)
+            logging.info(msg)
+
+            self.plot_d_real_losses.append(d_loss_real_epoch)
+            self.plot_d_fake_losses.append(d_loss_fake_epoch)
+            self.plot_g_val_losses.append(g_loss_val_epoch)
+            self.plot_g_recon_losses.append(g_loss_recon_epoch)
+            self.plot_epochs.append(epoch)
+
+            # Save the checkpoint with specified interval
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
+                self.export_loss_plots(n_batches)
 
             epoch_end_time = datetime.datetime.now()
             this_epoch_time = (epoch_end_time-epoch_start_time).total_seconds()
@@ -500,7 +529,7 @@ class ALOCC_Model():
 
         # Save the last version of the network
         self.save("final")
-        self.export_loss_plots(batch_idxs)
+        self.export_loss_plots(n_batches)
 
 
 
@@ -514,12 +543,6 @@ class ALOCC_Model():
 
         self.save_config(config_prepend)
 
-    @property
-    def model_dir(self):
-        return "{}_{}_{}".format(
-            self.dataset_name,
-            self.output_height, self.output_width)
-
     def save(self, step):
         """Helper method to save model weights.
         
@@ -527,8 +550,43 @@ class ALOCC_Model():
             step {[type]} -- [description]
         """
         os.makedirs(self.checkpoint_dir, exist_ok=True)
-        model_name = 'ALOCC_Model_{}.h5'.format(step)
-        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name))
+        adv_model_name = 'ALOCC_Model_{}_adv.h5'.format(step)
+        d_model_name = 'ALOCC_Model_{}_d.h5'.format(step)
+        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name_adv))
+        self.discriminator.save_weights(os.path.join(self.checkpoint_dir, model_name_d))
+
+    def load_last_checkpoint(self):
+        # Looks in models checkpoint directory and automatically find the latest checkpoint
+        if os.path.exists(model_dir):
+            filenames = os.listdir(checkpoint_dir)
+            filenames = [x.replace('ALOCC_Model_','').replace('.h5','') for x in filenames]
+            d_models = [x.replace('_d','') if '_d' in x for x in filenames]
+            adv_models = [x.replace('_adv','') if 'adv' in x for x in filenames]
+            
+            if 'final' in adv_models and 'final' in d_models:
+                d_checkpoint_path = self.log_dir+'/models/ALOCC_Model_final_d.h5'
+                adv_checkpoint_path = self.log_dir+'/models/ALOCC_Model_final_adv.h5'
+                print("Fully trained model found in %s"%model_dir)
+                return True
+            else:
+                d_epochs = [int(x) for x in d_models]
+                adv_epochs = [int(x) for x in adv_models]
+                try:
+                    max_epoch = np.intersect1d(d_epocs, adv_eopchs)[-1]
+                    print("Checkpoint found in epoch %d"%max_epoch)
+                    d_checkpoint_path = self.log_dir+'/models/ALOCC_Model_%d_d.h5%'%max_epoch
+                    adv_checkpoint_path = self.log_dir+'/models/ALOCC_Model_%d_adv.h5'%max_epoch
+                    self.discriminator.load_weights(d_checkpoint_path)
+                    self.adversarial_model.load_weights(adv_checkpoint_path)
+                    self.start_epoch = max_epoch
+                    return False
+
+                except IndexError:
+                    print("No common checkpoint for discriminator and adversarial model")
+                    d_checkpoint_path = None
+                    adv_checkpoint_path = None
+                    return False
+
 
     def save_config(self, prepend): 
         """ Save current state of configuration.py for reproduction purposes
@@ -581,7 +639,8 @@ class ALOCC_Model():
         plt.legend()
         #plt.savefig(self.train_dir+'self.plot_d_fake_losses.png')
         plt.savefig(self.train_dir+'plot_d_losses.png')
-        
+    
+    
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
 
@@ -610,4 +669,7 @@ if __name__ == '__main__':
     print("Training for %d epochs"%epochs)
 
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir, experiment_name=exp_name, cfg = cfg)
-    model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))
+    training_complete = model.load_last_checkpoint()
+    
+    if not training_complete:
+        model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))
