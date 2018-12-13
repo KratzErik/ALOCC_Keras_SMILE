@@ -512,7 +512,7 @@ class ALOCC_Model():
             self.plot_g_recon_losses.append(g_loss_recon_epoch)
             self.plot_epochs.append(epoch)
 
-            # Save the checkpoint with specified interval
+            # Save the checkpoint with specified interval and in last epoch
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
                 self.export_loss_plots(n_batches)
@@ -525,10 +525,11 @@ class ALOCC_Model():
             ETA_str = "%dh%dm%.2fs"%(ETA//3600,(ETA%3600)//60,ETA%60)
             print('Epoch (%d/%d) complete.\tTime: %.2f\tETA: %s'%(epoch+1,epochs,this_epoch_time,ETA_str))
         # end loop over epochs
+
         s_per_epoch = epochs_duration/epochs
 
         # Save the last version of the network
-        self.save("final")
+        self.save(epochs-1)
         self.export_loss_plots(n_batches)
 
 
@@ -555,37 +556,38 @@ class ALOCC_Model():
         self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name_adv))
         self.discriminator.save_weights(os.path.join(self.checkpoint_dir, model_name_d))
 
-    def load_last_checkpoint(self):
+    def load_last_checkpoint(self, epochs=None):
         # Looks in models checkpoint directory and automatically find the latest checkpoint
+        # Parameter epochs is the highest epoch a checkpoint will be loaded for
+        # If epochs == None (default), the latest checkpoint is found and loaded
         if os.path.exists(model_dir):
             filenames = os.listdir(checkpoint_dir)
             filenames = [x.replace('ALOCC_Model_','').replace('.h5','') for x in filenames]
             d_models = [x.replace('_d','') if '_d' in x for x in filenames]
             adv_models = [x.replace('_adv','') if 'adv' in x for x in filenames]
-            
-            if 'final' in adv_models and 'final' in d_models:
-                d_checkpoint_path = self.log_dir+'/models/ALOCC_Model_final_d.h5'
-                adv_checkpoint_path = self.log_dir+'/models/ALOCC_Model_final_adv.h5'
-                print("Fully trained model found in %s"%model_dir)
-                return True
-            else:
-                d_epochs = [int(x) for x in d_models]
-                adv_epochs = [int(x) for x in adv_models]
-                try:
-                    max_epoch = np.intersect1d(d_epocs, adv_eopchs)[-1]
-                    print("Checkpoint found in epoch %d"%max_epoch)
-                    d_checkpoint_path = self.log_dir+'/models/ALOCC_Model_%d_d.h5%'%max_epoch
-                    adv_checkpoint_path = self.log_dir+'/models/ALOCC_Model_%d_adv.h5'%max_epoch
+        
+            d_epochs = [int(x) for x in d_models]
+            adv_epochs = [int(x) for x in adv_models]
+            try:
+                max_epoch = np.intersect1d(d_epochs, adv_epochs)[-1]
+                print("Latest common checkpoint found in epoch %d"%max_epoch)
+                if max_epoch < epochs-1 or epochs is None:
+                    d_checkpoint_path = self.checkpoint_dir+'ALOCC_Model_%d_d.h5%'%max_epoch
+                    adv_checkpoint_path = self.checkpoint_dir+'ALOCC_Model_%d_adv.h5'%max_epoch
                     self.discriminator.load_weights(d_checkpoint_path)
                     self.adversarial_model.load_weights(adv_checkpoint_path)
                     self.start_epoch = max_epoch
                     return False
+                else: 
+                    print("Found checkpoint in later epoch than epochs requested")
+                    return True
 
-                except IndexError:
-                    print("No common checkpoint for discriminator and adversarial model")
-                    d_checkpoint_path = None
-                    adv_checkpoint_path = None
-                    return False
+            except IndexError:
+                print("No common checkpoint for discriminator and adversarial model")
+                return False
+        else:
+            print("No checkpoints found")
+            return False
 
 
     def save_config(self, prepend): 
@@ -669,7 +671,7 @@ if __name__ == '__main__':
     print("Training for %d epochs"%epochs)
 
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, r_alpha = cfg.r_alpha, log_dir = log_dir, experiment_name=exp_name, cfg = cfg)
-    training_complete = model.load_last_checkpoint()
+    training_complete = model.load_last_checkpoint(epochs)
     
     if not training_complete:
         model.train(epochs=epochs, batch_size=batch_size, sample_interval=min([500,cfg.n_train]))

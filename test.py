@@ -46,10 +46,14 @@ if __name__ == '__main__':
     test_time = datetime.datetime.now()
     log.append("# Test started at: %s"%test_time)
 
-    trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
-    print("Loading trained model from %s"%trained_model_path)
+    
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir, cfg=cfg)
-    model.adversarial_model.load_weights(trained_model_path)
+    if load_epoch == 'final':
+        model.load_last_checkpoint()
+    else:
+        trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
+        print("Loading trained model from %s"%trained_model_path)
+        model.adversarial_model.load_weights(trained_model_path)
 
     data = model.data
     batch_size = model.cfg.test_batch_size
