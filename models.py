@@ -438,8 +438,9 @@ class ALOCC_Model():
         learning_rate_drop_epoch = int(epochs*self.cfg.learning_rate_drop_epochs_frac)
         for epoch in range(self.start_epoch, epochs):
             epoch_start_time = datetime.datetime.now()
-            print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
-            
+            if self.cfg.print_batch_loss:
+                print('Epoch ({}/{})-----------------------------------------------------------------------'.format(epoch+1,epochs))
+
             if self.cfg.learning_rate_drop and epoch == learning_rate_drop_epoch:
                 old_lr = K.eval(self.discriminator.optimizer.lr)
                 new_lr = old_lr/self.cfg.learning_rate_drop_factor
@@ -463,16 +464,29 @@ class ALOCC_Model():
                 batch_clean_images = np.array(batch_clean).astype(np.float32)
                 if self.dataset_name in ('mnist','prosivic','dreyeve'):
                     batch_fake_images = self.generator.predict(batch_noise_images)
-                    # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
-                    d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
-                    d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
-                    
-                    # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
-                    #self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
-                    g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
-                    g_loss_recon = g_loss[1]
-                    g_loss_val = g_loss[2]
-
+                    if not cfg.alternate_training or epoch==self.start_epoch or (cfg.alternate_training and epoch%(2*cfg.alternate_epochs) >= cfg.alternate_epochs):
+                        if cfg.alternate_training:
+                            # Update once more to compensate for only updating half of the epochs
+                            self.discriminator.train_on_batch(batch_images, ones)
+                            self.discriminator.train_on_batch(batch_fake_images, zeros)
+                        # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
+                        d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
+                        d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
+                    else: # Don't update this epoch, set loss to average of previous epoch
+                        d_loss_real = self.plot_d_real_losses[-1]
+                        d_loss_fake = self.plot_d_fake_losses[-1]
+                    if not cfg.alternate_training or epoch==self.start_epoch or (cfg.alternate_training and epoch%(2*cfg.alternate_epochs) < cfg.alternate_epochs):
+                        if cfg.alternate_training:
+                            # Update once more to compensate for only updating half of the epochs
+                            self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
+                        # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
+                        #self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
+                        g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
+                        g_loss_recon = g_loss[1]
+                        g_loss_val = g_loss[2]
+                    else:
+                        g_loss_val = self.plot_g_val_losses[-1]
+                        g_loss_recon = self.plot_g_recon_losses[-1]
                     # Update arrays for plotting
                     d_loss_real_epoch  += d_loss_real
                     d_loss_fake_epoch  += d_loss_fake
@@ -481,7 +495,7 @@ class ALOCC_Model():
                     
                 counter += 1
                 if self.cfg.print_batch_loss:
-                    msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.3f}, g_val_loss:{5:>0.3f}, g_recon_loss:{6:>0.3f}'.format(epoch+1,epochs, idx+1, n_batches, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)
+                    msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.6f}, g_val_loss:{5:>0.6f}, g_recon_loss:{6:>0.6f}'.format(epoch+1,epochs, idx+1, n_batches, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)
                     print(msg)
                     logging.info(msg)
 
@@ -502,7 +516,7 @@ class ALOCC_Model():
             g_loss_val_epoch   = g_loss_val_epoch / n_batches
             g_loss_recon_epoch = g_loss_recon_epoch / n_batches
 
-            msg = 'Epoch:[{0}/{1}] --> d_loss: {2:>0.3f}, g_val_loss:{3:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1,epochs, d_loss_real_epoch+d_loss_fake_epoch, g_loss_val_epoch, g_loss_recon_epoch)
+            msg = 'Epoch:[{0}/{1}] --> d_loss: {2:>0.6f}, g_val_loss:{3:>0.6f}, g_recon_loss:{4:>0.6f}'.format(epoch+1,epochs, d_loss_real_epoch+d_loss_fake_epoch, g_loss_val_epoch, g_loss_recon_epoch)
             print(msg)
             logging.info(msg)
 

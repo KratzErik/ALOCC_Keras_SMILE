@@ -6,13 +6,14 @@ class Configuration(object):
 
         self.dataset = dataset
         self.r_alpha = 0.2
-        self.learning_rate = 0.001
+        self.learning_rate = 0.01
         self.learning_rate_drop = True
         self.learning_rate_drop_epochs_frac = 0.5
         self.learning_rate_drop_factor = 10
         self.optimizer = 'adam'
         self.decay = 0.00001
-
+        self.alternate_training = True
+        self.alternate_epochs = 5
         # Log settings
         self.experiment_name = experiment_name
 
