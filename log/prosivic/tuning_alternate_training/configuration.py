@@ -1,3 +1,8 @@
+# Training started at: 2018-12-14 11:18:20.262641
+# Training ended at: 2018-12-14 11:18:20.262641
+# Training duration: 0h 10m 16.43s
+# Training epochs: 300
+# Seconds per epoch: 2.049
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -12,7 +17,7 @@ class Configuration(object):
         self.learning_rate_drop_factor = 10
         self.optimizer = 'adam'
         self.decay = 0.00001
-        self.alternate_training = False
+        self.alternate_training = True
         self.alternate_epochs = 5
         # Log settings
         self.experiment_name = experiment_name
