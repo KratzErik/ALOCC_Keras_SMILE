@@ -1,3 +1,8 @@
+# Training started at: 2018-12-13 22:12:33.616918
+# Training ended at: 2018-12-13 22:12:33.616918
+# Training duration: 2h 44m 32.93s
+# Training epochs: 100
+# Seconds per epoch: 98.049
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -176,3 +181,26 @@ class Configuration(object):
         self.model_dir = self.log_dir+'models/'
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
+Num outliers: 500
+Num inliers: 500
+################################################################
+# Test started at: 2018-12-14 08:40:20.808551
+#AUROC D()-score:	1.00000
+#AUPRC D()-score:	1.00000
+Num outliers: 500
+Num inliers: 500
+################################################################
+# Test started at: 2018-12-14 08:47:13.167563
+#AUROC D()-score:	1.00000
+#AUPRC D()-score:	1.00000
+AUROC rec_err:	0.05016
+AUPRC: rec_err	0.35028
+Num outliers: 500
+Num inliers: 500
+################################################################
+# Test started at: 2018-12-14 08:51:05.046265
+Dataset: prosivic, outliers: out/foggy/
+#AUROC D()-score:	1.00000
+#AUPRC D()-score:	1.00000
+AUROC rec_err:	0.05016
+AUPRC: rec_err	0.35028

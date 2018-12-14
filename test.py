@@ -45,13 +45,13 @@ if __name__ == '__main__':
     log = ["################################################################"]
     test_time = datetime.datetime.now()
     log.append("# Test started at: %s"%test_time)
+    log.append("# Dataset: %s, outliers: %s"%(dataset,cfg.test_out_folder.replace(cfg.test_folder,"")))
 
-    
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir, cfg=cfg)
     if load_epoch == 'final':
         model.load_last_checkpoint()
     else:
-        trained_model_path = model_dir+'ALOCC_Model_%s.h5'%load_epoch
+        trained_model_path = model_dir+'ALOCC_Model_%s_adv.h5'%load_epoch
         print("Loading trained model from %s"%trained_model_path)
         model.adversarial_model.load_weights(trained_model_path)
 
@@ -129,19 +129,21 @@ if __name__ == '__main__':
     fpr, tpr, _ = roc_curve(model.test_labels, scores, pos_label = 1)
     roc_auc = auc(fpr,tpr)
     print("AUROC D()-score:\t", roc_auc)
-    log.append("#AUROC D()-score:\t%.5f"%roc_auc)
+    log.append("# AUROC D()-score:\t%.5f"%roc_auc)
     
     pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 1)
     prc_auc = auc(rc, pr)
     print("AUPRC D()-score:\t", prc_auc)
-    log.append("#AUPRC D()-score:\t%.5f"%prc_auc)
+    log.append("# AUPRC D()-score:\t%.5f"%prc_auc)
 
-    fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 0)
+    fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 1)
     roc_auc_err = auc(fpr,tpr)
     print("AUROC rec_err:\t", roc_auc_err)
-    pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 0)
+    log.append("# AUROC rec_err:\t%.5f"%roc_auc_err)
+    pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 1)
     prc_auc_err = auc(rc, pr)
     print("AUPRC: rec_err\t", prc_auc_err)
+    log.append("# AUPRC: rec_err\t%.5f"%prc_auc_err)
 
     # Save figures, etc, etc.
     inlier_idx = np.where(model.test_labels==0)[0]
@@ -150,8 +152,8 @@ if __name__ == '__main__':
     # Classwise scores
     inlier_scores = scores[inlier_idx]
     outlier_scores = scores[outlier_idx]
-    log.insert(0,'Num inliers: %d'%len(inlier_scores))
-    log.insert(0,'Num outliers: %d'%len(outlier_scores))
+    log.insert(2,'#Num inliers: %d'%len(inlier_scores))
+    log.insert(2,'#Num outliers: %d'%len(outlier_scores))
     # Sort classes to obtain most normal and anomalous
     in_perm = np.argsort(inlier_scores)
     out_perm = np.argsort(outlier_scores)

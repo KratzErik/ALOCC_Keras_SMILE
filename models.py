@@ -502,7 +502,7 @@ class ALOCC_Model():
             g_loss_val_epoch   = g_loss_val_epoch / n_batches
             g_loss_recon_epoch = g_loss_recon_epoch / n_batches
 
-            msg = 'Epoch:[{0}/{1}] --> d_loss: {2:>0.3f}, g_val_loss:{3:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1,epochs, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)
+            msg = 'Epoch:[{0}/{1}] --> d_loss: {2:>0.3f}, g_val_loss:{3:>0.3f}, g_recon_loss:{4:>0.3f}'.format(epoch+1,epochs, d_loss_real_epoch+d_loss_fake_epoch, g_loss_val_epoch, g_loss_recon_epoch)
             print(msg)
             logging.info(msg)
 
@@ -520,7 +520,7 @@ class ALOCC_Model():
             epoch_end_time = datetime.datetime.now()
             this_epoch_time = (epoch_end_time-epoch_start_time).total_seconds()
             epochs_duration += this_epoch_time
-            complete_epochs = epoch+1
+            complete_epochs = epoch+1-self.start_epoch
             ETA = (epochs-complete_epochs)*epochs_duration/complete_epochs
             ETA_str = "%dh%dm%.2fs"%(ETA//3600,(ETA%3600)//60,ETA%60)
             print('Epoch (%d/%d) complete.\tTime: %.2f\tETA: %s'%(epoch+1,epochs,this_epoch_time,ETA_str))
@@ -553,30 +553,27 @@ class ALOCC_Model():
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         adv_model_name = 'ALOCC_Model_{}_adv.h5'.format(step)
         d_model_name = 'ALOCC_Model_{}_d.h5'.format(step)
-        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name_adv))
-        self.discriminator.save_weights(os.path.join(self.checkpoint_dir, model_name_d))
+        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, adv_model_name))
+        self.discriminator.save_weights(os.path.join(self.checkpoint_dir, d_model_name))
 
     def load_last_checkpoint(self, epochs=None):
         # Looks in models checkpoint directory and automatically find the latest checkpoint
         # Parameter epochs is the highest epoch a checkpoint will be loaded for
         # If epochs == None (default), the latest checkpoint is found and loaded
-        if os.path.exists(model_dir):
-            filenames = os.listdir(checkpoint_dir)
+        if os.path.exists(self.checkpoint_dir):
+            filenames = os.listdir(self.checkpoint_dir)
             filenames = [x.replace('ALOCC_Model_','').replace('.h5','') for x in filenames]
-            d_models = [x.replace('_d','') if '_d' in x for x in filenames]
-            adv_models = [x.replace('_adv','') if 'adv' in x for x in filenames]
-        
-            d_epochs = [int(x) for x in d_models]
-            adv_epochs = [int(x) for x in adv_models]
+            d_epochs = [int(x.replace('_d','')) for x in filenames if '_d' in x]
+            adv_epochs = [int(x.replace('_adv','')) for x in filenames if '_adv' in x]
             try:
                 max_epoch = np.intersect1d(d_epochs, adv_epochs)[-1]
                 print("Latest common checkpoint found in epoch %d"%max_epoch)
-                if max_epoch < epochs-1 or epochs is None:
-                    d_checkpoint_path = self.checkpoint_dir+'ALOCC_Model_%d_d.h5%'%max_epoch
+                if epochs is None or max_epoch < epochs-1:
+                    d_checkpoint_path = self.checkpoint_dir+'ALOCC_Model_%d_d.h5'%max_epoch
                     adv_checkpoint_path = self.checkpoint_dir+'ALOCC_Model_%d_adv.h5'%max_epoch
                     self.discriminator.load_weights(d_checkpoint_path)
                     self.adversarial_model.load_weights(adv_checkpoint_path)
-                    self.start_epoch = max_epoch
+                    self.start_epoch = max_epoch+1
                     return False
                 else: 
                     print("Found checkpoint in later epoch than epochs requested")
