@@ -50,11 +50,12 @@ if __name__ == '__main__':
     model = ALOCC_Model(dataset_name=dataset, input_height=cfg.image_height,input_width=cfg.image_width, is_training= False, outlier_dir = outlier_dir, cfg=cfg)
     if load_epoch == 'final':
         model.load_last_checkpoint()
+        load_epoch = str(model.start_epoch-1)
     else:
         trained_model_path = model_dir+'ALOCC_Model_%s_adv.h5'%load_epoch
-        print("Loading trained model from %s"%trained_model_path)
         model.adversarial_model.load_weights(trained_model_path)
-
+    print("Loading trained model from epoch %s"%load_epoch)
+    
     data = model.data
     batch_size = model.cfg.test_batch_size
     n_batches = len(data)//batch_size

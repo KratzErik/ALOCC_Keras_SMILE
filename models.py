@@ -472,6 +472,7 @@ class ALOCC_Model():
                     g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])    
                     g_loss_recon = g_loss[0]
                     g_loss_val = g_loss[1]
+                    print("g_loss:", g_loss)
 
                     # Update arrays for plotting
                     d_loss_real_epoch  += d_loss_real
@@ -597,7 +598,7 @@ class ALOCC_Model():
                 for line in infile.readlines():
                     outfile.write(line)
 
-    def export_loss_plots(self, point_interval):
+    def export_loss_plots(self):
         # Export the Generator/R network reconstruction losses as a plot.
         plt.clf()
         plt.title('Generator/R network losses')
@@ -605,7 +606,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_g_recon_losses[point_interval::point_interval], label="Reconstruction loss")
+        plt.plot(self.plot_epochs,self.plot_g_recon_losses, label="Reconstruction loss")
         #plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
 
         # Export the Generator/R network validity losses as a plot.
@@ -613,7 +614,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_g_val_losses[point_interval::point_interval], label="Validity loss")
+        plt.plot(self.plot_epochs,self.plot_g_val_losses, label="Validity loss")
 #        plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
         plt.legend()
         plt.savefig(self.train_dir+'plot_g_losses.png')
@@ -625,7 +626,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_d_real_losses[point_interval::point_interval], label="Real images")
+        plt.plot(self.plot_epochs,self.plot_d_real_losses, label="Real images")
         #plt.savefig(self.train_dir+'self.plot_d_real_losses.png')
 
         #plt.clf()
@@ -634,7 +635,7 @@ class ALOCC_Model():
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
-        plt.plot(self.plot_epochs[point_interval::point_interval],self.plot_d_fake_losses[point_interval::point_interval], label="Generator images")
+        plt.plot(self.plot_epochs,self.plot_d_fake_losses, label="Generator images")
         plt.legend()
         #plt.savefig(self.train_dir+'self.plot_d_fake_losses.png')
         plt.savefig(self.train_dir+'plot_d_losses.png')
