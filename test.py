@@ -69,6 +69,7 @@ if __name__ == '__main__':
     for batch_idx in range(n_batches):
         batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
         batch_predicts = model.adversarial_model.predict(batch_data)
+        print("Predicts: ", len(batch_predicts))
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
         x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
@@ -88,12 +89,14 @@ if __name__ == '__main__':
     # All scores computed, evaluate and document
 
     # get final predics
-    final_data = data[n_batches*batch_size:]
-    final_predicts = model.adversarial_model.predict(final_data)
-    scores = np.append(scores, final_predicts[1])
-    x = K.eval(binary_crossentropy(K.variable(final_data), K.variable(final_predicts[0])))
-    final_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
-    recon_errors = np.append(recon_errors, final_recon_errors)
+    if len(data)%batch_size != 0:
+        final_data = data[n_batches*batch_size:]
+        final_predicts = model.adversarial_model.predict(final_data)
+        scores = np.append(scores, final_predicts[1])
+        x = K.eval(binary_crossentropy(K.variable(final_data), K.variable(final_predicts[0])))
+        final_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
+        recon_errors = np.append(recon_errors, final_recon_errors)
+
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip scores so max becomes min, etc.
     scores = scores.max()-scores

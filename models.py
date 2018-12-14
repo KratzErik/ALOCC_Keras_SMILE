@@ -468,11 +468,10 @@ class ALOCC_Model():
                     d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
                     
                     # Update R network twice, minimize noisy z->R->D->ones and reconstruction loss.
-                    self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
-                    g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])    
-                    g_loss_recon = g_loss[0]
-                    g_loss_val = g_loss[1]
-                    print("g_loss:", g_loss)
+                    #self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
+                    g_loss = self.adversarial_model.train_on_batch(batch_noise_images, [batch_clean_images, ones])
+                    g_loss_recon = g_loss[1]
+                    g_loss_val = g_loss[2]
 
                     # Update arrays for plotting
                     d_loss_real_epoch  += d_loss_real
@@ -516,7 +515,7 @@ class ALOCC_Model():
             # Save the checkpoint with specified interval and in last epoch
             if epoch % checkpoint_interval == 0:
                 self.save(epoch)
-                self.export_loss_plots(n_batches)
+                self.export_loss_plots()
 
             epoch_end_time = datetime.datetime.now()
             this_epoch_time = (epoch_end_time-epoch_start_time).total_seconds()
@@ -531,7 +530,7 @@ class ALOCC_Model():
 
         # Save the last version of the network
         self.save(epochs-1)
-        self.export_loss_plots(n_batches)
+        self.export_loss_plots()
 
 
 
