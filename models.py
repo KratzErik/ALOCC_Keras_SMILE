@@ -260,6 +260,7 @@ class ALOCC_Model():
                 if self.ae_architecture.max_pool:
                     x = UpSampling2D((self.ae_architecture.pool_size,self.ae_architecture.pool_size))(x)
                 for l in range(n_conv_layers_per_module_flip[m]):
+                    is_output_layer = (m == self.ae_architecture.n_conv_modules - 1 and l == self.ae_architecture.n_conv_layers_per_module[m]-1)
                     stride = int(stride_flip[m])
                     k_size = int(filter_size_flip[m])
                     if l == 0: # last layer in module
@@ -273,11 +274,11 @@ class ALOCC_Model():
                         #x = ZeroPadding2D(padding=inpad)(x)
 #                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_decoder_h%d_%d_conv'%(m,l))(x)
-                        if self.ae_architecture.use_batch_norm:
+                        if self.ae_architecture.use_batch_norm and not is_output_layer:
                             x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    if m == self.ae_architecture.n_conv_modules - 1 and l == self.ae_architecture.n_conv_layers_per_module[m]-1:
+                    if is_output_layer:
                         # Output layer
                         x = Activation('sigmoid')(x)
                     else:
@@ -349,12 +350,13 @@ class ALOCC_Model():
 
             x = Flatten()(x)
             for d in range(self.d_architecture.n_dense_layers):
+                is_output_layer = (d == self.d_architecture.n_dense_layers - 1)
                 x = Dense(self.d_architecture.n_dense_units[d], name='d_h%d_lin'%d)(x)
-                if self.d_architecture.use_batch_norm:
+                if self.d_architecture.use_batch_norm and not is_output_layer:
                     x = BatchNormalization()(x)
                 if self.d_architecture.use_dropout:
                     x = Dropout(self.d_architecture.dropout_rate)(x)
-                if d == self.d_architecture.n_dense_layers - 1: # output
+                if is_output_layer: # output
                     x = Activation('sigmoid')(x)
                 else:
                     x = LeakyReLU()(x)
