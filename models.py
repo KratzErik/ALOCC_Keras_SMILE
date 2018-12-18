@@ -171,13 +171,13 @@ class ALOCC_Model():
             # Encoder.
             x = Conv2D(filters=self.df_dim * 2, kernel_size = 5, strides=2, padding='same', name='g_encoder_h0_conv')(image)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
             x = Conv2D(filters=self.df_dim * 4, kernel_size = 5, strides=2, padding='same', name='g_encoder_h1_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
             x = Conv2D(filters=self.df_dim * 8, kernel_size = 5, strides=2, padding='same', name='g_encoder_h2_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
 
             # Decoder.
             # TODO: need a flexable solution to select output_padding and padding.
@@ -212,7 +212,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU()(x)
+                    x = LeakyReLU(alpha=0.01)(x)
                 if self.ae_architecture.max_pool:
                     x = MaxPool(self.ae_architecture.pool_size[m])(x)
 
@@ -232,7 +232,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU()(x)
+                    x = LeakyReLU(alpha=0.01)(x)
 
             # Decoder
             if self.ae_architecture.n_dense_layers > 0:
@@ -245,7 +245,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU()(x)
+                    x = LeakyReLU(alpha=0.01)(x)
 
                 x = Reshape(shape_before_dense)(x)
 
@@ -282,7 +282,7 @@ class ALOCC_Model():
                         # Output layer
                         x = Activation('sigmoid')(x)
                     else:
-                        x = LeakyReLU()(x)
+                        x = LeakyReLU(alpha=0.01)(x)
             
             return Model(image, x, name='R')
                 
@@ -300,19 +300,19 @@ class ALOCC_Model():
         if self.d_architecture is None:
             image = Input(shape=input_shape, name='d_input')
             x = Conv2D(filters=self.df_dim, kernel_size = 5, strides=2, padding='same', name='d_h0_conv')(image)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
 
             x = Conv2D(filters=self.df_dim*2, kernel_size = 5, strides=2, padding='same', name='d_h1_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
 
             x = Conv2D(filters=self.df_dim*4, kernel_size = 5, strides=2, padding='same', name='d_h2_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
 
             x = Conv2D(filters=self.df_dim*8, kernel_size = 5, strides=2, padding='same', name='d_h3_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU()(x)
+            x = LeakyReLU(alpha=0.01)(x)
 
             x = Flatten()(x)
             x = Dense(1, activation='sigmoid', name='d_h3_lin')(x)
@@ -336,7 +336,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.d_architecture.use_dropout:
                         x = Dropout(self.d_architecture.dropout_rate)(x)
-                    x = LeakyReLU()(x)
+                    x = LeakyReLU(alpha=0.01)(x)
                 if self.d_architecture.max_pool:
                     x = MaxPool(self.d_architecture.pool_size[m])(x)
 
@@ -359,7 +359,7 @@ class ALOCC_Model():
                 if is_output_layer: # output
                     x = Activation('sigmoid')(x)
                 else:
-                    x = LeakyReLU()(x)
+                    x = LeakyReLU(alpha=0.01)(x)
             
             return Model(image, x, name='D')
 
