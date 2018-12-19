@@ -20,7 +20,7 @@ class Configuration(object):
         # Diagnostics settings
         self.print_batch_loss = False
         # Test settings
-        self.load_epoch = 90
+        self.load_epoch = "final"
         self.test_batch_size = 64
         self.test_batch_verbose = False
 
