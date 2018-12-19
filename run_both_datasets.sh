@@ -1,7 +1,7 @@
 #!/bin/bash
 
-exp_name_prosivic=$1
-exp_name_dreyeve=$2
+exp_name=$1
+epochs=$2
 
-python3 models.py -d prosivic -e 100 -x $exp_name_prosivic &&
-python3 models.py -d dreyeve -e 100 -x $exp_name_dreyeve
+python3 models.py -d prosivic -e $epochs -x $exp_name &&
+python3 models.py -d dreyeve -e $epochs -x $exp_name
