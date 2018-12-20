@@ -190,3 +190,12 @@ class Configuration(object):
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
         self.test_batch_size = min(self.test_batch_size, self.n_test)
+################################################################
+# Test started at: 2018-12-20 09:59:32.537791
+#Num outliers: 600
+#Num inliers: 600
+# Dataset: dreyeve, outliers: out/
+# AUROC D()-score:	0.50000
+# AUPRC D()-score:	0.75000
+# AUROC rec_err:	0.55594
+# AUPRC: rec_err	0.51154

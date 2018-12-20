@@ -69,7 +69,6 @@ if __name__ == '__main__':
     for batch_idx in range(n_batches):
         batch_data = data[batch_idx * batch_size:(batch_idx + 1) * batch_size]
         batch_predicts = model.adversarial_model.predict(batch_data)
-        print("Predicts: ", len(batch_predicts))
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
         x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
