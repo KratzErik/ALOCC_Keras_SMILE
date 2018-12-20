@@ -92,7 +92,7 @@ class Configuration(object):
             self.n_test_in = 600 // self.data_divider
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
-            self.num_checkpoints = 50
+            self.num_checkpoints = 10
 
             # Data sources
             self.img_folder =   "../weather_detection_data/dreyeve/sunny_highway_countryside_morning_evening_vs_rainy_highway_countryside_morning_evening/"
@@ -147,7 +147,7 @@ class Configuration(object):
             self.n_test_in = 500 // self.data_div
             self.out_frac = (self.n_test-self.n_test_in)/self.n_test
             self.batch_size = 64
-            self.num_checkpoints  = 50
+            self.num_checkpoints  = 10
 
             # Data format
             self.image_height = 256
