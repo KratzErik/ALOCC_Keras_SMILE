@@ -29,6 +29,7 @@ class AE_Architecture():
                 if isinstance(self.pool_size,int):
                     self.pool_size = [self.pool_size]*self.n_conv_modules
                 self.use_batch_norm = cfg.ae_use_batch_norm
+                self.output_batch_norm = cfg.ae_output_batch_norm
                 self.use_dropout = cfg.ae_use_dropout
                 self.dropout_rate = cfg.ae_dropout_rate
 

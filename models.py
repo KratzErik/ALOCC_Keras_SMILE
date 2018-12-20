@@ -144,6 +144,9 @@ class ALOCC_Model():
                 y_test_out = np.zeros((len(X_test_out),),dtype=np.int32)
                 self.data = np.concatenate([X_test_in, X_test_out]) / 255.0
                 self.test_labels = np.concatenate([y_test_in, y_test_out])
+
+            # Cast whole dataset to float32, to not do it batchwise later
+            #self.data = self.data.astype(np.float32)
         else:
           assert('Error in loading dataset')
 
@@ -171,13 +174,13 @@ class ALOCC_Model():
             # Encoder.
             x = Conv2D(filters=self.df_dim * 2, kernel_size = 5, strides=2, padding='same', name='g_encoder_h0_conv')(image)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
             x = Conv2D(filters=self.df_dim * 4, kernel_size = 5, strides=2, padding='same', name='g_encoder_h1_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
             x = Conv2D(filters=self.df_dim * 8, kernel_size = 5, strides=2, padding='same', name='g_encoder_h2_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             # Decoder.
             # TODO: need a flexable solution to select output_padding and padding.
@@ -212,7 +215,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU(alpha=0.01)(x)
+                    x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
                 if self.ae_architecture.max_pool:
                     x = MaxPool(self.ae_architecture.pool_size[m])(x)
 
@@ -232,7 +235,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU(alpha=0.01)(x)
+                    x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             # Decoder
             if self.ae_architecture.n_dense_layers > 0:
@@ -245,7 +248,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
-                    x = LeakyReLU(alpha=0.01)(x)
+                    x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
                 x = Reshape(shape_before_dense)(x)
 
@@ -274,7 +277,7 @@ class ALOCC_Model():
                         #x = ZeroPadding2D(padding=inpad)(x)
 #                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_decoder_h%d_%d_conv'%(m,l))(x)
-                        if self.ae_architecture.use_batch_norm and not is_output_layer:
+                        if self.ae_architecture.use_batch_norm and (self.ae_architecture.output_batch_norm or not is_output_layer):
                             x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
@@ -282,7 +285,7 @@ class ALOCC_Model():
                         # Output layer
                         x = Activation('sigmoid')(x)
                     else:
-                        x = LeakyReLU(alpha=0.01)(x)
+                        x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
             
             return Model(image, x, name='R')
                 
@@ -300,19 +303,19 @@ class ALOCC_Model():
         if self.d_architecture is None:
             image = Input(shape=input_shape, name='d_input')
             x = Conv2D(filters=self.df_dim, kernel_size = 5, strides=2, padding='same', name='d_h0_conv')(image)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             x = Conv2D(filters=self.df_dim*2, kernel_size = 5, strides=2, padding='same', name='d_h1_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             x = Conv2D(filters=self.df_dim*4, kernel_size = 5, strides=2, padding='same', name='d_h2_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             x = Conv2D(filters=self.df_dim*8, kernel_size = 5, strides=2, padding='same', name='d_h3_conv')(x)
             x = BatchNormalization()(x)
-            x = LeakyReLU(alpha=0.01)(x)
+            x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             x = Flatten()(x)
             x = Dense(1, activation='sigmoid', name='d_h3_lin')(x)
@@ -336,7 +339,7 @@ class ALOCC_Model():
                         x = BatchNormalization()(x)
                     if self.d_architecture.use_dropout:
                         x = Dropout(self.d_architecture.dropout_rate)(x)
-                    x = LeakyReLU(alpha=0.01)(x)
+                    x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
                 if self.d_architecture.max_pool:
                     x = MaxPool(self.d_architecture.pool_size[m])(x)
 
@@ -352,14 +355,14 @@ class ALOCC_Model():
             for d in range(self.d_architecture.n_dense_layers):
                 is_output_layer = (d == self.d_architecture.n_dense_layers - 1)
                 x = Dense(self.d_architecture.n_dense_units[d], name='d_h%d_lin'%d)(x)
-                if self.d_architecture.use_batch_norm and not is_output_layer:
+                if self.d_architecture.use_batch_norm and (self.d_architecture.output_batch_norm or not is_output_layer):
                     x = BatchNormalization()(x)
                 if self.d_architecture.use_dropout:
                     x = Dropout(self.d_architecture.dropout_rate)(x)
                 if is_output_layer: # output
                     x = Activation('sigmoid')(x)
                 else:
-                    x = LeakyReLU(alpha=0.01)(x)
+                    x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
             
             return Model(image, x, name='D')
 
@@ -456,16 +459,16 @@ class ALOCC_Model():
 
             for idx in range(0, n_batches):
                 # Get a batch of images and add random noise.
-                if self.dataset_name in ('mnist','prosivic','dreyeve'):
-                    batch = self.data[idx * batch_size:(idx + 1) * batch_size]
-                    batch_noise = sample_w_noise[idx * batch_size:(idx + 1) * batch_size]
-                    batch_clean = self.data[idx * batch_size:(idx + 1) * batch_size]
+                batch_images = self.data[idx * batch_size:(idx + 1) * batch_size]
+                batch_noise_images = sample_w_noise[idx * batch_size:(idx + 1) * batch_size]
+                batch_clean_images = self.data[idx * batch_size:(idx + 1) * batch_size]
+
                 # Turn batch images data to float32 type.
-                batch_images = np.array(batch).astype(np.float32)
-                batch_noise_images = np.array(batch_noise).astype(np.float32)
-                batch_clean_images = np.array(batch_clean).astype(np.float32)
+                batch_images = np.array(batch_images).astype(np.float32)
+                batch_noise_images = np.array(batch_noise_images).astype(np.float32)
+                batch_clean_images = np.array(batch_clean_images).astype(np.float32)
                 batch_fake_images = self.generator.predict(batch_noise_images)
-                
+
                 # Update D network, minimize real images inputs->D-> ones, noisy z->R->D->zeros loss.
                 d_loss_real = self.discriminator.train_on_batch(batch_images, ones)
                 d_loss_fake = self.discriminator.train_on_batch(batch_fake_images, zeros)
@@ -480,7 +483,7 @@ class ALOCC_Model():
                 d_loss_fake_epoch  += d_loss_fake
                 g_loss_val_epoch   += g_loss_val
                 g_loss_recon_epoch += g_loss_recon
-                    
+
                 counter += 1
                 if self.cfg.print_batch_loss:
                     msg = 'Epoch:[{0}/{1}]-[{2}/{3}] --> d_loss: {4:>0.6f}, g_val_loss:{5:>0.6f}, g_recon_loss:{6:>0.6f}'.format(epoch+1,epochs, idx+1, n_batches, d_loss_real+d_loss_fake, g_val_loss, g_recon_loss)

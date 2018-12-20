@@ -34,6 +34,7 @@ class D_Architecture(object):
                 if isinstance(self.pool_size,int):
                     self.pool_size = [self.pool_size]*self.n_conv_modules
                 self.use_batch_norm = cfg.d_use_batch_norm
+                self.output_batch_norm = cfg.d_output_batch_norm
                 self.use_dropout = cfg.d_use_dropout
                 self.dropout_rate = cfg.d_dropout_rate
 
