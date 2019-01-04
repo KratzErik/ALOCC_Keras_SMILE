@@ -102,15 +102,26 @@ if __name__ == '__main__':
 
     # Save scores and labels for comparison with other experiments
     if export_results:
-        results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
+        if cfg.test_name is None:
+            results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
+            exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC.txt'%dataset
+        else:
+            results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s.pkl'%(dataset,cfg.test_name)
+            exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s.txt'%(dataset,cfg.test_name)
+
         with open(results_filepath,'wb') as f:
             pickle.dump([scores,model.test_labels],f)
         print("Saved results to %s"%results_filepath)
+
         # Update data source dict with experiment name
-        common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
-        common_results_dict[dataset]["ALOCC"] == exp_name
-        pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
-        print("Updated entry ['%s']['ALOCC'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
+        with open(exp_name_file, 'w') as f:
+            f.write(exp_name)
+            
+        # common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
+        # common_results_dict[dataset]["ALOCC"] == exp_name
+        # pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
+        # print("Updated entry ['%s']['ALOCC'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
+
 
         # Export recon errors in the same way
         results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_recon.pkl'%dataset

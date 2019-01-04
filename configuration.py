@@ -17,8 +17,10 @@ class Configuration(object):
         self.lrelu_alpha = 0.01
         self.alternate_training = False
         self.alternate_epochs = 5
+        
         # Log settings
         self.experiment_name = experiment_name
+        self.test_name = None # If you want to run several test sets for same trained model, specify a test name to store results separately
 
         # Diagnostics settings
         self.print_batch_loss = False
