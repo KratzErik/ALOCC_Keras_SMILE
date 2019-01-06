@@ -61,6 +61,7 @@ if __name__ == '__main__':
     n_batches = len(data)//batch_size
     scores = np.array([])
     recon_errors = np.array([])
+    dscores = np.array([])
 
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip labels 0 > 1 and 1 > 0
@@ -71,11 +72,13 @@ if __name__ == '__main__':
         batch_predicts = model.adversarial_model.predict(batch_data)
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
+        batch_dscores = model.discriminator(batch_data)
         x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
         batch_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
 
         scores = np.append(scores, batch_scores)
         recon_errors = np.append(recon_errors, batch_recon_errors)
+        dscores = np.append(dscores, batch_dscores)
 
         if model.cfg.test_batch_verbose:
             batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -92,6 +95,7 @@ if __name__ == '__main__':
         final_data = data[n_batches*batch_size:]
         final_predicts = model.adversarial_model.predict(final_data)
         scores = np.append(scores, final_predicts[1])
+        dscores = np.append(dscores, model.discriminator[final_data])
         x = K.eval(binary_crossentropy(K.variable(final_data), K.variable(final_predicts[0])))
         final_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
         recon_errors = np.append(recon_errors, final_recon_errors)
@@ -99,23 +103,29 @@ if __name__ == '__main__':
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip scores so max becomes min, etc.
     scores = scores.max()-scores
+    dscores = dscores.max()-dscores
 
     # Save scores and labels for comparison with other experiments
     if export_results:
-        if cfg.test_name is None:
-            results_filepath = '/home/exjobb_resultat/data/%s_ALOCC.pkl'%dataset
-            exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC.txt'%dataset
-        else:
-            results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s.pkl'%(dataset,cfg.test_name)
-            exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s.txt'%(dataset,cfg.test_name)
 
-        with open(results_filepath,'wb') as f:
-            pickle.dump([scores,model.test_labels],f)
-        print("Saved results to %s"%results_filepath)
+        def export_scores(score_vector, score_name):
+            if cfg.test_name is None:
+                results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s.pkl'%(dataset, score_name)
+                exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s.txt'%(dataset,score_name)
+            else:
+                results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s_%s.pkl'%(dataset,score_name,cfg.test_name)
+                exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s_%s.txt'%(dataset,score_name,cfg.test_name)
 
-        # Update data source dict with experiment name
-        with open(exp_name_file, 'w') as f:
-            f.write(exp_name)
+            with open(results_filepath,'wb') as f:
+                pickle.dump([score_vector,model.test_labels],f)
+            print("Saved D(R(x)) results to %s"%results_filepath)
+
+            # Update score directory log with experiment name
+            with open(exp_name_file, 'w') as f:
+                f.write(exp_name)
+
+        # First, save actual ALOCC scores: D(R(x))
+        export_scores(scores, "DRx")
             
         # common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
         # common_results_dict[dataset]["ALOCC"] == exp_name
@@ -124,15 +134,10 @@ if __name__ == '__main__':
 
 
         # Export recon errors in the same way
-        results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_recon.pkl'%dataset
-        with open(results_filepath,'wb') as f:
-            pickle.dump([recon_errors,model.test_labels],f)
-        print("Saved reconstruction based results to %s"%results_filepath)
-        # Update data source dict with experiment name
-        common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
-        common_results_dict[dataset]["ALOCC_recon"] == exp_name
-        pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
-        print("Updated entry ['%s']['ALOCC_recon'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
+        export_scores(recon_errors, "reconerr")
+
+        # Last, save D(x) scores (as compared in ALOCC paper)
+        export_scores(dscores, "Dx")
 
     # Assert export dir exists
     if not os.path.exists(test_dir):
