@@ -190,3 +190,12 @@ class Configuration(object):
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
         self.test_batch_size = min(self.test_batch_size, self.n_test)
+################################################################
+# Test started at: 2019-01-06 17:25:18.505257
+#Num outliers: 500
+#Num inliers: 500
+# Dataset: prosivic, outliers: out/foggy/
+# AUROC D(R(x))-score:	0.99842
+# AUPRC D(R(x))-score:	0.99911
+# AUROC rec_err:	0.33008
+# AUPRC: rec_err	0.44310

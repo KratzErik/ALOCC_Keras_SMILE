@@ -52,8 +52,12 @@ if __name__ == '__main__':
         model.load_last_checkpoint()
         load_epoch = str(model.start_epoch-1)
     else:
-        trained_model_path = model_dir+'ALOCC_Model_%s_adv.h5'%load_epoch
-        model.adversarial_model.load_weights(trained_model_path)
+        trained_adv_path = model_dir+'ALOCC_Model_%s_adv.h5'%load_epoch
+        trained_d_path = model_dir+'ALOCC_Model_%s_d.h5'%load_epoch
+        model.adversarial_model.load_weights(trained_adv_path)
+        model.discriminator.load_weights(trained_d_path)
+        
+        
     print("Loading trained model from epoch %s"%load_epoch)
     
     data = model.data
@@ -72,13 +76,16 @@ if __name__ == '__main__':
         batch_predicts = model.adversarial_model.predict(batch_data)
         batch_scores = batch_predicts[1]
         batch_recons = batch_predicts[0]
-        batch_dscores = model.discriminator(batch_data)
+
         x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
         batch_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
 
         scores = np.append(scores, batch_scores)
         recon_errors = np.append(recon_errors, batch_recon_errors)
-        dscores = np.append(dscores, batch_dscores)
+
+        if cfg.use_d_score:
+            batch_dscores = model.discriminator(batch_data)
+            dscores = np.append(dscores, batch_dscores)
 
         if model.cfg.test_batch_verbose:
             batch_labels = model.test_labels[batch_idx * batch_size:(batch_idx + 1) * batch_size]
@@ -95,15 +102,17 @@ if __name__ == '__main__':
         final_data = data[n_batches*batch_size:]
         final_predicts = model.adversarial_model.predict(final_data)
         scores = np.append(scores, final_predicts[1])
-        dscores = np.append(dscores, model.discriminator[final_data])
         x = K.eval(binary_crossentropy(K.variable(final_data), K.variable(final_predicts[0])))
         final_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
         recon_errors = np.append(recon_errors, final_recon_errors)
 
+        if cfg.use_d_score:
+            dscores = np.append(dscores, model.discriminator[final_data])
+            dscores = dscores.max()-dscores
+
     # For compatibility with other algorithm tests, we need label 1 for outliers, 0 for outliers
     # and scores that increase with abnormality => flip scores so max becomes min, etc.
     scores = scores.max()-scores
-    dscores = dscores.max()-dscores
 
     # Save scores and labels for comparison with other experiments
     if export_results:
@@ -137,7 +146,8 @@ if __name__ == '__main__':
         export_scores(recon_errors, "reconerr")
 
         # Last, save D(x) scores (as compared in ALOCC paper)
-        export_scores(dscores, "Dx")
+        if cfg.use_d_score:
+            export_scores(dscores, "Dx")
 
     # Assert export dir exists
     if not os.path.exists(test_dir):
@@ -145,20 +155,35 @@ if __name__ == '__main__':
         print("Created directory %s" % test_dir)
 
     # Print metrics
+    # D(R(x)) results
     fpr, tpr, _ = roc_curve(model.test_labels, scores, pos_label = 1)
     roc_auc = auc(fpr,tpr)
-    print("AUROC D()-score:\t", roc_auc)
-    log.append("# AUROC D()-score:\t%.5f"%roc_auc)
-    
+    print("AUROC D(R(x))-score:\t", roc_auc)
+    log.append("# AUROC D(R(x))-score:\t%.5f"%roc_auc)
+
     pr, rc, _ = precision_recall_curve(model.test_labels, scores, pos_label = 1)
     prc_auc = auc(rc, pr)
-    print("AUPRC D()-score:\t", prc_auc)
-    log.append("# AUPRC D()-score:\t%.5f"%prc_auc)
+    print("AUPRC D(R(x))-score:\t", prc_auc)
+    log.append("# AUPRC D(R(x))-score:\t%.5f"%prc_auc)
 
+    if cfg.use_d_score:
+        # D(x) results
+        fpr, tpr, _ = roc_curve(model.test_labels, dscores, pos_label = 1)
+        roc_auc = auc(fpr,tpr)
+        print("AUROC D(x)-score:\t", roc_auc)
+        log.append("# AUROC D(x)-score:\t%.5f"%roc_auc)
+
+        pr, rc, _ = precision_recall_curve(model.test_labels, dscores, pos_label = 1)
+        prc_auc = auc(rc, pr)
+        print("AUPRC D(x)-score:\t", prc_auc)
+        log.append("# AUPRC D(x)-score:\t%.5f"%prc_auc)
+
+    # Reconstruction error results
     fpr, tpr, _ = roc_curve(model.test_labels, recon_errors, pos_label = 1)
     roc_auc_err = auc(fpr,tpr)
     print("AUROC rec_err:\t", roc_auc_err)
     log.append("# AUROC rec_err:\t%.5f"%roc_auc_err)
+
     pr, rc, _ = precision_recall_curve(model.test_labels, recon_errors, pos_label = 1)
     prc_auc_err = auc(rc, pr)
     print("AUPRC: rec_err\t", prc_auc_err)

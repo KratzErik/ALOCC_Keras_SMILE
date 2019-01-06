@@ -20,7 +20,7 @@ class Configuration(object):
         
         # Log settings
         self.experiment_name = experiment_name
-        self.test_name = None # If you want to run several test sets for same trained model, specify a test name to store results separately
+        self.test_name = "foggy" # If you want to run several test sets for same trained model, specify a test name to store results separately
 
         # Diagnostics settings
         self.print_batch_loss = False
@@ -28,7 +28,7 @@ class Configuration(object):
         self.load_epoch = "final"
         self.test_batch_size = 64
         self.test_batch_verbose = False
-
+        self.use_d_score = False
         # Dataset specific settings below
         if self.dataset == 'mnist':
 
@@ -164,6 +164,9 @@ class Configuration(object):
             self.test_in_folder =  self.test_folder + "in/"
             self.test_out_folder =  self.test_folder + "out/foggy/"
 
+            if "urban" in self.test_out_folder:
+                self.n_test = 488*2//self.data_div
+                self.n_test_in = 488 // self.data_div
         '''
         elif self.dataset == "bdd100k":
             self.img_folder = Path("/data/bdd100k/images/train_and_val_256by256")
