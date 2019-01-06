@@ -162,7 +162,7 @@ class Configuration(object):
             self.val_folder =   "../weather_detection_data/prosivic/val/"
             self.test_folder = "../weather_detection_data/prosivic/test/"
             self.test_in_folder =  self.test_folder + "in/"
-            self.test_out_folder =  self.test_folder + "out/foggy/"
+            self.test_out_folder =  self.test_folder + "out/urban/"
 
             if "urban" in self.test_out_folder:
                 self.n_test = 488*2//self.data_div
