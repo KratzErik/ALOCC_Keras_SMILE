@@ -189,7 +189,7 @@ if __name__ == '__main__':
     print("AUPRC: rec_err\t", prc_auc_err)
     log.append("# AUPRC: rec_err\t%.5f"%prc_auc_err)
 
-    # Save figures, etc, etc.
+    # Separate inliers and outliers
     inlier_idx = np.where(model.test_labels==0)[0]
     outlier_idx = np.where(model.test_labels==1)[0]
 
@@ -208,6 +208,18 @@ if __name__ == '__main__':
     #plt.show()
     print('Saving score histogram to ', test_dir+'scores_hist.png')
     plt.savefig(test_dir+'scores_hist.png')
+
+    # Classwise recon_errors
+    inlier_recerr = recon_errors[inlier_idx]
+    outlier_recerr = recon_errors[outlier_idx]
+
+    # Recon error histogram
+    plt.clf()
+    plt.hist(inlier_recerr, alpha=0.5, label='Inliers')
+    plt.hist(outlier_recerr, alpha=0.5, label='Outliers')
+    plt.legend(loc='upper right')
+    print('Saving score histogram to ', test_dir+'recerr_hist.png')
+    plt.savefig(test_dir+'recerr_hist.png')
 
     # Plot reconstructions
     sample_size = 16

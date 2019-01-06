@@ -199,3 +199,12 @@ class Configuration(object):
 # AUPRC D(R(x))-score:	0.99911
 # AUROC rec_err:	0.33008
 # AUPRC: rec_err	0.44310
+################################################################
+# Test started at: 2019-01-06 17:32:02.854405
+#Num outliers: 500
+#Num inliers: 500
+# Dataset: prosivic, outliers: out/foggy/
+# AUROC D(R(x))-score:	0.99842
+# AUPRC D(R(x))-score:	0.99911
+# AUROC rec_err:	0.33008
+# AUPRC: rec_err	0.44310
