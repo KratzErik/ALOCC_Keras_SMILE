@@ -78,7 +78,7 @@ if __name__ == '__main__':
         batch_recons = batch_predicts[0]
 
         x = K.eval(binary_crossentropy(K.variable(batch_data), K.variable(batch_recons)))
-        batch_recon_errors = x.sum(axis=tuple(range(1,x.ndim)))
+        batch_recon_errors = x.sum(axis=tuple(range(0,x.ndim)))
 
         scores = np.append(scores, batch_scores)
         recon_errors = np.append(recon_errors, batch_recon_errors)
