@@ -20,7 +20,6 @@ class Configuration(object):
         
         # Log settings
         self.experiment_name = experiment_name
-        self.test_name = "foggy" # If you want to run several test sets for same trained model, specify a test name to store results separately
 
         # Diagnostics settings
         self.print_batch_loss = False

@@ -217,3 +217,30 @@ class Configuration(object):
 # AUPRC D(R(x))-score:	0.99892
 # AUROC rec_err:	0.99940
 # AUPRC: rec_err	0.99930
+################################################################
+# Test started at: 2019-01-06 18:00:23.074196
+#Num outliers: 500
+#Num inliers: 500
+# Dataset: prosivic, outliers: out/foggy/
+# AUROC D(R(x))-score:	0.99842
+# AUPRC D(R(x))-score:	0.99911
+# AUROC rec_err:	0.33008
+# AUPRC: rec_err	0.44310
+################################################################
+# Test started at: 2019-01-06 18:01:50.115925
+#Num outliers: 500
+#Num inliers: 500
+# Dataset: prosivic, outliers: out/foggy/
+# AUROC D(R(x))-score:	0.99842
+# AUPRC D(R(x))-score:	0.99911
+# AUROC rec_err:	0.33008
+# AUPRC: rec_err	0.44310
+################################################################
+# Test started at: 2019-01-06 18:14:19.429715
+#Num outliers: 488
+#Num inliers: 488
+# Dataset: prosivic, outliers: out/urban/
+# AUROC D(R(x))-score:	0.99895
+# AUPRC D(R(x))-score:	0.99892
+# AUROC rec_err:	0.99940
+# AUPRC: rec_err	0.99930

@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     # Save scores and labels for comparison with other experiments
     if export_results:
-
+        cfg.test_name = out_name
         def export_scores(score_vector, score_name):
             if cfg.test_name is None:
                 results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s.pkl'%(dataset, score_name)
