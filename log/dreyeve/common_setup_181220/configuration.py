@@ -190,3 +190,39 @@ class Configuration(object):
         self.train_dir = self.log_dir+'train/'
         self.test_dir = self.log_dir+'test/'
         self.test_batch_size = min(self.test_batch_size, self.n_test)
+################################################################
+# Test started at: 2019-01-06 17:51:05.745978
+#Num outliers: 600
+#Num inliers: 600
+# Dataset: dreyeve, outliers: out/
+# AUROC D(R(x))-score:	0.49833
+# AUPRC D(R(x))-score:	0.74791
+# AUROC rec_err:	0.56035
+# AUPRC: rec_err	0.51924
+################################################################
+# Test started at: 2019-01-06 17:52:31.255503
+#Num outliers: 600
+#Num inliers: 600
+# Dataset: dreyeve, outliers: out/
+# AUROC D(R(x))-score:	0.50700
+# AUPRC D(R(x))-score:	0.74101
+# AUROC rec_err:	0.70544
+# AUPRC: rec_err	0.64070
+################################################################
+# Test started at: 2019-01-06 17:55:30.199577
+#Num outliers: 600
+#Num inliers: 600
+# Dataset: dreyeve, outliers: out/
+# AUROC D(R(x))-score:	0.50700
+# AUPRC D(R(x))-score:	0.74101
+# AUROC rec_err:	0.70544
+# AUPRC: rec_err	0.64070
+################################################################
+# Test started at: 2019-01-06 17:57:12.912113
+#Num outliers: 600
+#Num inliers: 600
+# Dataset: dreyeve, outliers: out/
+# AUROC D(R(x))-score:	0.49833
+# AUPRC D(R(x))-score:	0.74791
+# AUROC rec_err:	0.56035
+# AUPRC: rec_err	0.51924
