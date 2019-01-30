@@ -20,6 +20,16 @@ import os
 #%matplotlib inline
 
 if __name__ == '__main__':
+
+    # When run as a script, this file loads models trained and saved by running models.py
+    # Specify which model to test by providing the same values for arguments --dataset and 
+    # --exp_name as when running models.py
+
+    # Both ALOCC novelty scores and autoencoder reconstruction errors are computed for all 
+    # test set samples, and corresponding AUROC and AUPRC are printed.
+    # There is an option in ./configuration.py to also export the scores and labels to a 
+    # specified directory, for post-processing of nd results.
+
     parser=argparse.ArgumentParser()
     parser.add_argument('--load_epoch','-e', default='final', help='Training epoch to load model from')
     parser.add_argument('--dataset', '-d', default='mnist', help='Dataset to use (overrides configuration)')
@@ -119,11 +129,11 @@ if __name__ == '__main__':
 
         def export_scores(score_vector, score_name):
             if cfg.test_name is None:
-                results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s.pkl'%(dataset, score_name)
-                exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s.txt'%(dataset,score_name)
+                results_filepath = cfg.export_results_dir + '%s_ALOCC_%s.pkl'%(dataset, score_name)
+                exp_name_file = cfg.export_results_dir + 'experiment_names/%s_ALOCC_%s.txt'%(dataset,score_name)
             else:
-                results_filepath = '/home/exjobb_resultat/data/%s_ALOCC_%s_%s.pkl'%(dataset,score_name,cfg.test_name)
-                exp_name_file = '/home/exjobb_resultat/data/experiment_names/%s_ALOCC_%s_%s.txt'%(dataset,score_name,cfg.test_name)
+                results_filepath = cfg.export_results_dir + '%s_ALOCC_%s_%s.pkl'%(dataset,score_name,cfg.test_name)
+                exp_name_file = cfg.export_results_dir + 'experiment_names/%s_ALOCC_%s_%s.txt'%(dataset,score_name,cfg.test_name)
 
             with open(results_filepath,'wb') as f:
                 pickle.dump([score_vector,model.test_labels],f)
@@ -135,12 +145,6 @@ if __name__ == '__main__':
 
         # First, save actual ALOCC scores: D(R(x))
         export_scores(scores, "DRx")
-            
-        # common_results_dict = pickle.load(open('/home/exjobb_resultat/data/name_dict.pkl','rb'))
-        # common_results_dict[dataset]["ALOCC"] == exp_name
-        # pickle.dump(common_results_dict,open('/home/exjobb_resultat/data/name_dict.pkl','wb'), protocol=2)
-        # print("Updated entry ['%s']['ALOCC'] = '%s' in file /home/exjobb_resultat/data/name_dict.pkl"%(dataset,exp_name))
-
 
         # Export recon errors in the same way
         export_scores(recon_errors, "reconerr")

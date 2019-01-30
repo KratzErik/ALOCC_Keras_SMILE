@@ -1,3 +1,6 @@
+# In this file, nearly all settings for experiments are specified. The only exceptions are
+# command line arguments to the files ./models.py and ./test.py.
+
 from pathlib import Path
 import datetime
 class Configuration(object):
@@ -6,7 +9,7 @@ class Configuration(object):
 
         self.dataset = dataset
 
-        # General trianing settings
+        # General training settings
         self.r_alpha = 0.2
         self.learning_rate = 0.001
         self.learning_rate_drop = True
@@ -29,6 +32,8 @@ class Configuration(object):
         self.test_batch_size = 64
         self.test_batch_verbose = False
         self.use_d_score = False
+        self.export_results_dir = '/home/exjobb_resultat/data/'
+
         # Dataset specific settings below
         if self.dataset == 'mnist':
 

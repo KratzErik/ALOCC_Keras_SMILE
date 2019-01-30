@@ -1,3 +1,26 @@
+# In this file, the autoencoder and discriminator models are constructed and trained.
+# Architectures can either be coded explicitly here, by editing the functions:
+#       build_generator() for the autoencoder
+#       build_discriminator() for the discriminator
+# or more easily defined using the architecture options in ./configuration.py
+
+# The optimization (loss) objectives are setup in build_model() and the models are trained
+# in function train(). The train() function calls several utility functions in this file,
+# e.g. for saving and loading checkpoints.
+
+# When the file is run as a script, the code at the bottom of the file is executed. This 
+# will create a configuration object from the specified command line arguments dataset and 
+# exp_name, and do the following:
+
+# 1. Create an ALOCC model
+# 2. Check if there exists a model checkpoint matching the specified number of epochs
+# 3. If more epochs are needed (includes the case were no checkpoint exists), train the
+#    model until the specified number of epochs is completed.
+    
+#    The model will be checkpointed at intervals specified in ./configuration.py, and at 
+#    the final epoch.
+
+
 from __future__ import print_function, division
 
 from keras.datasets import mnist
@@ -135,7 +158,6 @@ class ALOCC_Model():
             if self.is_training:
                 X_train = np.array([img_to_array(load_img(self.cfg.train_folder + filename)) for filename in os.listdir(self.cfg.train_folder)][:self.cfg.n_train])
                 self.data = X_train / 255.0
-                # self._X_val = [img_to_array(load_img(self.cfg.prosivic_val_folder + filename)) for filename in os.listdir(self.cfg.prosivic_val_folder)][:self.cfg.prosivic_n_val] 
             else: #load test data     
                 n_test_out = self.cfg.n_test - self.cfg.n_test_in
                 X_test_in = np.array([img_to_array(load_img(self.cfg.test_in_folder + filename)) for filename in os.listdir(self.cfg.test_in_folder)][:self.cfg.n_test_in])
@@ -144,9 +166,6 @@ class ALOCC_Model():
                 y_test_out = np.zeros((len(X_test_out),),dtype=np.int32)
                 self.data = np.concatenate([X_test_in, X_test_out]) / 255.0
                 self.test_labels = np.concatenate([y_test_in, y_test_out])
-
-            # Cast whole dataset to float32, to not do it batchwise later
-            #self.data = self.data.astype(np.float32)
         else:
           assert('Error in loading dataset')
 
@@ -183,23 +202,17 @@ class ALOCC_Model():
             x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
 
             # Decoder.
-            # TODO: need a flexable solution to select output_padding and padding.
             x = Conv2DTranspose(self.gf_dim*2, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=0, name='g_decoder_h0')(x)
             x = BatchNormalization()(x)
             x = Conv2DTranspose(self.gf_dim*1, kernel_size = 5, strides=2, activation='relu', padding='same', output_padding=1, name='g_decoder_h1')(x)
             x = BatchNormalization()(x)
             x = Conv2DTranspose(self.c_dim,    kernel_size = 5, strides=2, activation='tanh', padding='same', output_padding=1, name='g_decoder_h2')(x)
 
-            #x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
-            #x = UpSampling2D((2, 2))(x)
-            #x = Conv2D(self.gf_dim*1, kernel_size=5, activation='relu', padding='same')(x)
-            #x = UpSampling2D((2, 2))(x)
-            #x = Conv2D(self.gf_dim*2, kernel_size=3, activation='relu')(x)
-            #x = UpSampling2D((2, 2))(x)
-            #x = Conv2D(self.c_dim, kernel_size=5, activation='sigmoid', padding='same')(x)
             return Model(image, x, name='R')
         
         else: # architecture built from ae_architecture object
+            # This code block reads autoencoder architecture settings from ./configuration object cfg, 
+            # and adds layers in loops
             image = Input(shape=input_shape, name='z')
             x = image
             # Encoder
@@ -272,17 +285,12 @@ class ALOCC_Model():
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same',  name='g_decoder_h%d_%d_conv'%(m,l))(x)
                     else:
                         outpad = int((k_size-stride)%2)
-                        inpad = int((k_size-stride+outpad)//2)
-                        #print(inpad, type(inpad))
-                        #x = ZeroPadding2D(padding=inpad)(x)
-#                        x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='valid', output_padding = (outpad,outpad), name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         x = Conv2DTranspose(filters=channels, kernel_size = k_size, strides=stride, padding='same', name='g_decoder_h%d_%d_conv'%(m,l))(x)
                         if self.ae_architecture.use_batch_norm and (self.ae_architecture.output_batch_norm or not is_output_layer):
                             x = BatchNormalization()(x)
                     if self.ae_architecture.use_dropout:
                         x = Dropout(self.ae_architecture.dropout_rate)(x)
                     if is_output_layer:
-                        # Output layer
                         x = Activation('sigmoid')(x)
                     else:
                         x = LeakyReLU(alpha=self.cfg.lrelu_alpha)(x)
@@ -323,6 +331,8 @@ class ALOCC_Model():
             return Model(image, x, name='D')
         
         else: # architecture built from d_architecture object
+            # This code block reads discriminator architecture settings from ./configuration object cfg, 
+            # and adds layers in loops
             image = Input(shape=input_shape, name='z')
             x = image
             
@@ -492,11 +502,6 @@ class ALOCC_Model():
 
                 if np.mod(counter, sample_interval) == 0:
                     samples = self.generator.predict(sample_inputs)
-                        #manifold_h = int(np.ceil(np.sqrt(samples.shape[0])))
-                        #manifold_w = int(np.floor(np.sqrt(samples.shape[0])))
-                        #save_images(samples, [manifold_h, manifold_w],
-                        #    './{}/train_{:02d}_{:04d}.png'.format(self.train_dir, epoch, idx))
-                        #scipy.misc.imsave(self.train_dir+'train_%d_%d_samples.png'%(epoch,idx), montage(np.squeeze(samples))
                     scipy.misc.imsave('./{}{:02d}_{:04d}_reconstructions.jpg'.format(self.train_dir,epoch,idx), montage(np.squeeze(samples)))
             
             # end of loop over batches
@@ -606,42 +611,33 @@ class ALOCC_Model():
         # Export the Generator/R network reconstruction losses as a plot.
         plt.clf()
         plt.title('Generator/R network losses')
-        #plt.title('Generator/R network reconstruction losses')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(self.plot_epochs,self.plot_g_recon_losses, label="Reconstruction loss")
-        #plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
 
         # Export the Generator/R network validity losses as a plot.
-        #plt.title('Generator/R network reconstruction losses')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(self.plot_epochs,self.plot_g_val_losses, label="Validity loss")
-#        plt.savefig(self.train_dir+'self.plot_g_recon_losses.png')
         plt.legend()
         plt.savefig(self.train_dir+'plot_g_losses.png')
 
         plt.clf()
         # Export the discriminator losses for real images as a plot.
         plt.title('Discriminator loss for real/fake images')
-        #plt.title('Discriminator loss for real images')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(self.plot_epochs,self.plot_d_real_losses, label="Real images")
-        #plt.savefig(self.train_dir+'self.plot_d_real_losses.png')
 
-        #plt.clf()
         # Export the discriminator losses for fake images as a plot.
-        #plt.title('Discriminator loss for fake images')
         plt.xlabel('Epoch')
         plt.ylabel('training loss')
         plt.grid()
         plt.plot(self.plot_epochs,self.plot_d_fake_losses, label="Generator images")
         plt.legend()
-        #plt.savefig(self.train_dir+'self.plot_d_fake_losses.png')
         plt.savefig(self.train_dir+'plot_d_losses.png')
     
     
