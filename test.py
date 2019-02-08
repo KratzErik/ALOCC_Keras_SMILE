@@ -126,6 +126,11 @@ if __name__ == '__main__':
 
     # Save scores and labels for comparison with other experiments
     if export_results:
+         # Assert results export dir exists
+        if not os.path.exists(cfg.export_results_dir):
+        os.makedirs(cfg.export_results_dir)
+        print("Created directory %s" % cfg.export_results_dir)
+
         cfg.test_name = out_name
         def export_scores(score_vector, score_name):
             if cfg.test_name is None:
@@ -153,7 +158,7 @@ if __name__ == '__main__':
         if cfg.use_d_score:
             export_scores(dscores, "Dx")
 
-    # Assert export dir exists
+    # Assert test diagnostic directory exists
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
         print("Created directory %s" % test_dir)
