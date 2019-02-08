@@ -128,8 +128,8 @@ if __name__ == '__main__':
     if export_results:
          # Assert results export dir exists
         if not os.path.exists(cfg.export_results_dir):
-        os.makedirs(cfg.export_results_dir)
-        print("Created directory %s" % cfg.export_results_dir)
+            os.makedirs(cfg.export_results_dir)
+            print("Created directory %s" % cfg.export_results_dir)
 
         cfg.test_name = out_name
         def export_scores(score_vector, score_name):
